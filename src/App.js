@@ -66,7 +66,7 @@ const properties = {
       brochure: "/brochures/paragon.pdf",
       city: "Lekki",
       bedrooms: 3,
-      img: "/assets/buy_lekki.jpg",
+      img: "./assets/buy_lekki.jpg",
     },
     {
       id: "civic",
@@ -75,7 +75,7 @@ const properties = {
       brochure: "/brochures/civic.pdf",
       city: "Victoria Island",
       bedrooms: 5,
-      img: "/assets/buy_vi.jpg",
+      img: "./assets/buy_vi.jpg",
     },
   ],
   rent: [
@@ -86,7 +86,7 @@ const properties = {
       brochure: "/brochures/ikoyi.pdf",
       city: "Ikoyi",
       bedrooms: 2,
-      img: "/assets/rent_ikoyi.jpg",
+      img: "./assets/rent_ikoyi.jpg",
       rent: true,
     },
     {
@@ -96,7 +96,7 @@ const properties = {
       brochure: "/brochures/lekki.pdf",
       city: "Lekki",
       bedrooms: 1,
-      img: "/assets/rent_lekki.jpg",
+      img: "./assets/rent_lekki.jpg",
       rent: true,
     },
   ],
@@ -108,7 +108,7 @@ const services = [
   "Procurement & Fit‑Out",
 ];
 
-/* ------------------------------ Tiny tests ------------------------------- */
+/* ------------------------------ Filters util ----------------------------- */
 function filterProperties(list, f) {
   return list.filter((p) => {
     if (f.city && !p.city.toLowerCase().includes(String(f.city).toLowerCase()))
@@ -122,6 +122,25 @@ function filterProperties(list, f) {
 
 /* --------------------------- Shared: section style --------------------------- */
 const sectionPad = { padding: "80px 0", scrollMarginTop: 96 };
+
+/* ---------------------------- Logo Component ---------------------------- */
+// Fix: use RELATIVE path (no leading slash) to avoid 404 under subpaths,
+// add fixed dimensions + display:block to prevent layout shift ("glitch").
+const Logo = ({ height = 36 }) => (
+  <img
+    src={"./assets/hillstar-logo.png"}
+    alt="Hillstar"
+    width={Math.round((height / 1) * 1)}
+    height={height}
+    style={{ height, width: "auto", display: "block", verticalAlign: "middle" }}
+    loading="eager"
+    decoding="async"
+    onError={(e) => {
+      e.currentTarget.onerror = null;
+      e.currentTarget.src = "./assets/logo_red.svg"; // fallback
+    }}
+  />
+);
 
 /* -------------------------------- Topbar -------------------------------- */
 const Topbar = () => (
@@ -164,40 +183,44 @@ const Topbar = () => (
           gap: 10,
         }}
       >
-        {/* Inline SVG icons so no external libs needed */}
-        <a href="#" aria-label="Instagram" style={{ color: BRAND.white }}>
-          <svg
-            width="18"
-            height="18"
-            viewBox="0 0 24 24"
-            fill="currentColor"
-            aria-hidden
+        {/* social icons inline */}
+        {[
+          [
+            "Instagram",
+            "M12 7a5 5 0 100 10 5 5 0 000-10m0-5c2.7 0 3.04 0 4.1.06 1.06.06 1.78.22 2.42.47a4.9 4.9 0 012.06 1.34 4.9 4.9 0 011.34 2.06c.25.64.41 1.36.47 2.42.06 1.06.06 1.4.06 4.1s0 3.04-.06 4.1c-.06 1.06-.22 1.78-.47 2.42a4.9 4.9 0 01-1.34 2.06 4.9 4.9 0 01-2.06 1.34c-.64.25-1.36.41-2.42.47-1.06.06-1.4.06-4.1.06s-3.04 0-4.1-.06c-1.06-.06-1.78-.22-2.42-.47a4.9 4.9 0 01-2.06-1.34 4.9 4.9 0 01-1.34-2.06c-.25-.64-.41-1.36-.47-2.42C2 15.04 2 14.7 2 12s0-3.04.06-4.1c.06-1.06.22-1.78.47-2.42A4.9 4.9 0 013.87 3.4 4.9 4.9 0 015.93 2.06c.64-.25 1.36-.41 2.42-.47C9.41 1.53 9.74 1.5 12 1.5z",
+          ],
+          [
+            "Twitter",
+            "M23 4.5a9.4 9.4 0 01-2.7.74A4.72 4.72 0 0022.4 3a9.42 9.42 0 01-3 1.14A4.7 4.7 0 0016.1 3a4.7 4.7 0 00-4.7 4.7c0 .37.04.72.12 1.06A13.34 13.34 0 013 3.9a4.7 4.7 0 001.45 6.27 4.67 4.67 0 01-2.13-.59v.06a4.7 4.7 0 003.77 4.6c-.5.13-1.03.2-1.57.2-.39 0-.77-.04-1.13-.11a4.7 4.7 0 004.39 3.27A9.44 9.44 0 012 20.5a13.3 13.3 0 007.2 2.1c8.64 0 13.36-7.16 13.36-13.36 0-.2 0-.41-.02-.61A9.53 9.53 0 0023 4.5z",
+          ],
+          [
+            "LinkedIn",
+            "M4.98 3.5C4.98 4.88 3.86 6 2.5 6S0 4.88 0 3.5 1.12 1 2.5 1 4.98 2.12 4.98 3.5zM.5 8.5h4V24h-4V8.5zM8.5 8.5h3.8v2.1h.05c.53-1 1.85-2.1 3.8-2.1 4.07 0 4.82 2.68 4.82 6.17V24h-4v-7.2c0-1.72-.03-3.93-2.4-3.93-2.4 0-2.76 1.87-2.76 3.8V24h-4V8.5z",
+          ],
+        ].map(([label, d]) => (
+          <a
+            key={label}
+            href="#"
+            aria-label={label}
+            style={{
+              color: BRAND.white,
+              display: "inline-grid",
+              placeItems: "center",
+              width: 28,
+              height: 28,
+            }}
           >
-            <path d="M12 7a5 5 0 100 10 5 5 0 000-10m0-5c2.7 0 3.04 0 4.1.06 1.06.06 1.78.22 2.42.47a4.9 4.9 0 012.06 1.34 4.9 4.9 0 011.34 2.06c.25.64.41 1.36.47 2.42.06 1.06.06 1.4.06 4.1s0 3.04-.06 4.1c-.06 1.06-.22 1.78-.47 2.42a4.9 4.9 0 01-1.34 2.06 4.9 4.9 0 01-2.06 1.34c-.64.25-1.36.41-2.42.47-1.06.06-1.4.06-4.1.06s-3.04 0-4.1-.06c-1.06-.06-1.78-.22-2.42-.47a4.9 4.9 0 01-2.06-1.34 4.9 4.9 0 01-1.34-2.06c-.25-.64-.41-1.36-.47-2.42C2 15.04 2 14.7 2 12s0-3.04.06-4.1c.06-1.06.22-1.78.47-2.42A4.9 4.9 0 013.87 3.4 4.9 4.9 0 015.93 2.06c.64-.25 1.36-.41 2.42-.47C9.41 1.53 9.74 1.5 12 1.5z" />
-          </svg>
-        </a>
-        <a href="#" aria-label="Twitter" style={{ color: BRAND.white }}>
-          <svg
-            width="18"
-            height="18"
-            viewBox="0 0 24 24"
-            fill="currentColor"
-            aria-hidden
-          >
-            <path d="M23 4.5a9.4 9.4 0 01-2.7.74A4.72 4.72 0 0022.4 3a9.42 9.42 0 01-3 1.14A4.7 4.7 0 0016.1 3a4.7 4.7 0 00-4.7 4.7c0 .37.04.72.12 1.06A13.34 13.34 0 013 3.9a4.7 4.7 0 001.45 6.27 4.67 4.67 0 01-2.13-.59v.06a4.7 4.7 0 003.77 4.6c-.5.13-1.03.2-1.57.2-.39 0-.77-.04-1.13-.11a4.7 4.7 0 004.39 3.27A9.44 9.44 0 012 20.5a13.3 13.3 0 007.2 2.1c8.64 0 13.36-7.16 13.36-13.36 0-.2 0-.41-.02-.61A9.53 9.53 0 0023 4.5z" />
-          </svg>
-        </a>
-        <a href="#" aria-label="LinkedIn" style={{ color: BRAND.white }}>
-          <svg
-            width="18"
-            height="18"
-            viewBox="0 0 24 24"
-            fill="currentColor"
-            aria-hidden
-          >
-            <path d="M4.98 3.5C4.98 4.88 3.86 6 2.5 6S0 4.88 0 3.5 1.12 1 2.5 1 4.98 2.12 4.98 3.5zM.5 8.5h4V24h-4V8.5zM8.5 8.5h3.8v2.1h.05c.53-1 1.85-2.1 3.8-2.1 4.07 0 4.82 2.68 4.82 6.17V24h-4v-7.2c0-1.72-.03-3.93-2.4-3.93-2.4 0-2.76 1.87-2.76 3.8V24h-4V8.5z" />
-          </svg>
-        </a>
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="currentColor"
+              aria-hidden
+            >
+              <path d={d} />
+            </svg>
+          </a>
+        ))}
       </div>
     </div>
   </div>
@@ -225,16 +248,7 @@ const Nav = () => (
       }}
     >
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-        {/* Use onError fallback so logo always shows */}
-        <img
-          src="/assets/hillstar-logo.svg"
-          alt="Hillstar"
-          style={{ height: 36 }}
-          onError={(e) => {
-            e.currentTarget.onerror = null;
-            e.currentTarget.src = "/assets/logo_red.svg"; // fallback name
-          }}
-        />
+        <Logo />
       </div>
       <nav
         style={{
@@ -266,7 +280,6 @@ const Nav = () => (
 
 /* -------------------------------- Hero ---------------------------------- */
 const Hero = ({ mode, setMode }) => {
-  // Only the background layer moves; the section itself is static.
   const [offset, setOffset] = useState(0);
   useEffect(() => {
     const onScroll = () => setOffset(window.scrollY * 0.2);
@@ -283,10 +296,9 @@ const Hero = ({ mode, setMode }) => {
         textAlign: "center",
         position: "relative",
         background: "linear-gradient(180deg,#0B0B0B,#111)",
-        isolation: "isolate", // ensure bg layer doesn't overlap next section
+        isolation: "isolate",
       }}
     >
-      {/* Parallax background inside the hero's stacking context */}
       <div
         aria-hidden
         style={{
@@ -299,7 +311,6 @@ const Hero = ({ mode, setMode }) => {
           zIndex: 0,
         }}
       />
-
       <div style={{ position: "relative", zIndex: 1 }}>
         <h1 style={{ ...utils.h1, color: BRAND.white }}>
           Building Your Vision, Crafting with Precision
@@ -330,7 +341,6 @@ const Hero = ({ mode, setMode }) => {
             Rent Properties
           </button>
         </div>
-
         <div
           style={{
             width: "min(1400px,96%)",
@@ -392,7 +402,7 @@ const About = () => (
           }}
         >
           <img
-            src="/assets/about_red.jpg"
+            src="./assets/about_red.jpg"
             alt="Hillstar architecture"
             style={{
               width: "100%",
@@ -412,15 +422,7 @@ const About = () => (
         </div>
       </div>
       <div>
-        <img
-          src="/assets/hillstar-logo.svg"
-          alt="Hillstar"
-          style={{ height: 36 }}
-          onError={(e) => {
-            e.currentTarget.onerror = null;
-            e.currentTarget.src = "/assets/logo_red.svg";
-          }}
-        />
+        <Logo height={40} />
         <div
           style={{
             marginTop: 16,
@@ -565,7 +567,7 @@ ${JSON.stringify(payload, null, 2)}`);
         }}
       >
         <img
-          src={p.img || "/assets/placeholder.jpg"}
+          src={p.img || "./assets/villa.jpeg"}
           alt={p.title}
           style={{ width: "100%", height: "100%", objectFit: "cover" }}
         />
@@ -923,15 +925,7 @@ const Footer = () => (
     >
       <div>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <img
-            src="/assets/hillstar-logo.svg"
-            alt="Hillstar"
-            style={{ height: 32 }}
-            onError={(e) => {
-              e.currentTarget.onerror = null;
-              e.currentTarget.src = "/assets/logo_red.svg";
-            }}
-          />
+          <Logo height={32} />
         </div>
         <p style={{ color: "#444", marginTop: 12 }}>
           With deep market Knowledge, Integrity and Passion for Service, we turn
@@ -1076,7 +1070,6 @@ export default function App() {
   const [mode, setMode] = useState("rent");
   return (
     <main style={layout.page}>
-      {/* helper: anchor offset for sticky nav on all sections via scrollMarginTop in sectionPad */}
       <Topbar />
       <Nav />
       <Hero mode={mode} setMode={setMode} />
