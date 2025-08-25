@@ -31,6 +31,7 @@ const Base = ({
     fill={fill}
     strokeLinecap="round"
     strokeLinejoin="round"
+    aria-hidden="true"
   >
     {children}
   </svg>
@@ -70,6 +71,7 @@ export const Icon = {
       height={p.size || 18}
       viewBox="0 0 24 24"
       fill="currentColor"
+      aria-hidden="true"
     >
       <path d="M8 5v14l11-7z" />
     </svg>
@@ -461,26 +463,32 @@ export function Header() {
 /* Footer (multi-column like screenshot)                               */
 /* ------------------------------------------------------------------ */
 export function Footer({ year = new Date().getFullYear() }) {
+  const vw = useViewport();
+  const isDesktop = vw >= 900;
+
+  const gridCols = isDesktop ? "repeat(12, minmax(0, 1fr))" : "1fr";
+  const col = (span) => (isDesktop ? `span ${span}` : "auto");
+
   return (
     <footer style={{ background: "#f6f6f6", color: "#111" }}>
       <div
         style={{
           width: "min(1200px,92vw)",
           margin: "0 auto",
-          padding: "36px 0 22px",
+          padding: isDesktop ? "36px 0 22px" : "28px 0 18px",
           display: "grid",
-          gap: 24,
+          gap: isDesktop ? 24 : 18,
         }}
       >
         <div
           style={{
             display: "grid",
             gap: 20,
-            gridTemplateColumns: "repeat(12, minmax(0, 1fr))",
+            gridTemplateColumns: gridCols,
           }}
         >
           {/* Brand + blurb */}
-          <div style={{ gridColumn: "span 4" }}>
+          <div style={{ gridColumn: col(4) }}>
             <img
               src="/assets/hillstar-logo.png"
               alt="Hillstar Logo"
@@ -516,7 +524,7 @@ export function Footer({ year = new Date().getFullYear() }) {
           </div>
 
           {/* Offers */}
-          <div style={{ gridColumn: "span 2" }}>
+          <div style={{ gridColumn: col(2) }}>
             <div style={{ fontWeight: 800, marginBottom: 8 }}>Offers</div>
             <div style={{ display: "grid", gap: 8 }}>
               <Link to="/" style={{ textDecoration: "none", color: "inherit" }}>
@@ -532,7 +540,7 @@ export function Footer({ year = new Date().getFullYear() }) {
           </div>
 
           {/* Company */}
-          <div style={{ gridColumn: "span 3" }}>
+          <div style={{ gridColumn: col(3) }}>
             <div style={{ fontWeight: 800, marginBottom: 8 }}>Company</div>
             <div style={{ display: "grid", gap: 8 }}>
               <Link
@@ -551,7 +559,7 @@ export function Footer({ year = new Date().getFullYear() }) {
           </div>
 
           {/* Quick Links + Contact */}
-          <div style={{ gridColumn: "span 3" }}>
+          <div style={{ gridColumn: col(3) }}>
             <div style={{ fontWeight: 800, marginBottom: 8 }}>Quick Links</div>
             <div style={{ display: "grid", gap: 8, marginBottom: 16 }}>
               <Link
@@ -709,6 +717,9 @@ export function Fab({
 /* Layout helpers used by pages (restored)                             */
 /* ------------------------------------------------------------------ */
 export function HeroStrip({ title, subtitle }) {
+  const vw = useViewport();
+  const titleSize = vw > 900 ? 38 : vw > 600 ? 30 : 24;
+
   return (
     <div
       style={{
@@ -721,10 +732,10 @@ export function HeroStrip({ title, subtitle }) {
         style={{
           width: "min(1200px,92vw)",
           margin: "0 auto",
-          padding: "56px 0",
+          padding: vw > 600 ? "56px 0" : "38px 0",
         }}
       >
-        <div style={{ fontSize: 38, fontWeight: 900 }}>{title}</div>
+        <div style={{ fontSize: titleSize, fontWeight: 900 }}>{title}</div>
         {subtitle ? (
           <div style={{ opacity: 0.9, marginTop: 6 }}>{subtitle}</div>
         ) : null}
@@ -734,13 +745,14 @@ export function HeroStrip({ title, subtitle }) {
 }
 
 export function Section({ title, subtitle, children, extraRight }) {
+  const vw = useViewport();
   return (
     <section style={{ background: "#fafafa" }}>
       <div
         style={{
           width: "min(1200px,92vw)",
           margin: "0 auto",
-          padding: "26px 0",
+          padding: vw > 600 ? "26px 0" : "18px 0",
           display: "grid",
           gap: 16,
         }}
@@ -755,7 +767,14 @@ export function Section({ title, subtitle, children, extraRight }) {
           }}
         >
           <div>
-            <div style={{ fontSize: 26, fontWeight: 900 }}>{title}</div>
+            <div
+              style={{
+                fontSize: vw > 600 ? 26 : 22,
+                fontWeight: 900,
+              }}
+            >
+              {title}
+            </div>
             {subtitle ? (
               <div style={{ opacity: 0.8, marginTop: 4 }}>{subtitle}</div>
             ) : null}
@@ -768,8 +787,13 @@ export function Section({ title, subtitle, children, extraRight }) {
   );
 }
 
-export function VideoPlayer({ src, label }) {
+/* ------------------------------- Responsive Video ------------------------------- */
+export function VideoPlayer({ src, label, ratio = 16 / 9, poster }) {
   const [playing, setPlaying] = useState(false);
+
+  // padding-top fallback (for browsers without CSS aspect-ratio)
+  const padPct = `${Math.round((100 / ratio) * 1000) / 1000}%`;
+
   return (
     <div
       style={{
@@ -788,14 +812,34 @@ export function VideoPlayer({ src, label }) {
       >
         {label || "Video"}
       </div>
-      <div style={{ position: "relative" }}>
+
+      {/* Wrapper uses aspectRatio + paddingTop fallback */}
+      <div
+        style={{
+          position: "relative",
+          width: "100%",
+          aspectRatio: `${ratio}`,
+          paddingTop: padPct, // fallback
+          background: "#000",
+        }}
+      >
         <video
           src={src}
           controls
-          style={{ width: "100%", height: "auto", display: "block" }}
+          playsInline
+          poster={poster}
           onPlay={() => setPlaying(true)}
           onPause={() => setPlaying(false)}
+          style={{
+            position: "absolute",
+            inset: 0,
+            width: "100%",
+            height: "100%",
+            display: "block",
+            objectFit: "cover",
+          }}
         />
+
         {!playing && (
           <div
             style={{
@@ -804,6 +848,7 @@ export function VideoPlayer({ src, label }) {
               display: "grid",
               placeItems: "center",
               pointerEvents: "none",
+              color: "#fff",
             }}
           >
             <Icon.Play size={40} />
@@ -891,6 +936,7 @@ export function BookingForm() {
           background: BRAND.red,
           color: "#fff",
           fontWeight: 900,
+          cursor: "pointer",
         }}
       >
         Send Enquiry

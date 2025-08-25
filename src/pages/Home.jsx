@@ -74,7 +74,7 @@ const Svg = {
     <svg width={size} height={size} viewBox="0 0 24 24" {...p}>
       <path
         fill="currentColor"
-        d="M11 2h2v4h-2V2Zm7.778 2.222l1.414 1.414l-2.828 2.828l-1.414-1.414l2.828-2.828ZM2.808 3.636l1.414-1.414l2.828 2.828L5.636 6.464L2.808 3.636ZM12 8a2 2 0 1 1 0 4a2 2 0 0 1 0-4Zm-2 6h4l3 8h-2l-1-3h-2l-1 3H7l3-8Zm2.5 3l-.5-1.333L11.5 17h1Z"
+        d="M11 2h2v4h-2V2Zm7.778 2.222l1.414 1.414l-2.828 2.828l-1.414-1.414l2.828-2.828ZM2.808 3.636l1.414-1.414l2.828 2.828L5.636 6.464L2.808 3.636ZM12 8a2 2 0 1 1 0 4 2 2 0 0 1 0-4Zm-2 6h4l3 8h-2l-1-3h-2l-1 3H7l3-8Zm2.5 3-.5-1.333L11.5 17h1Z"
       />
     </svg>
   ),
@@ -189,6 +189,7 @@ const SOCIALS = [
 
 export default function Home() {
   const vw = useViewport();
+  const isPhone = vw < 480;
   const scrollY = useScrollY();
   const nav = useNavigate();
 
@@ -442,7 +443,8 @@ export default function Home() {
       <div
         style={{
           position: "relative",
-          height: "80vh",
+          height: "min(80vh, 720px)",
+          minHeight: 420,
           background: `url(${slide.img}) center/cover no-repeat`,
           color: "#fff",
           display: "grid",
@@ -458,14 +460,20 @@ export default function Home() {
           }}
         />
         <div style={{ position: "relative", maxWidth: 800, padding: "0 16px" }}>
-          <h1 style={{ fontSize: 48, fontWeight: 900 }}>{slide.title}</h1>
-          <p style={{ marginTop: 10, fontSize: 18 }}>{slide.subtitle}</p>
+          <h1 style={{ fontSize: "clamp(24px, 6vw, 48px)", fontWeight: 900 }}>
+            {slide.title}
+          </h1>
+          <p style={{ marginTop: 10, fontSize: "clamp(14px, 2.6vw, 18px)" }}>
+            {slide.subtitle}
+          </p>
           <div
             style={{
               display: "flex",
               gap: 12,
               justifyContent: "center",
               marginTop: 20,
+              flexWrap: "wrap",
+              flexDirection: isPhone ? "column" : "row",
             }}
           >
             <button
@@ -477,6 +485,7 @@ export default function Home() {
                 borderRadius: 6,
                 fontWeight: 700,
                 cursor: "pointer",
+                width: isPhone ? "100%" : "auto",
               }}
             >
               Buy Properties
@@ -491,6 +500,7 @@ export default function Home() {
                 borderRadius: 6,
                 fontWeight: 700,
                 cursor: "pointer",
+                width: isPhone ? "100%" : "auto",
               }}
             >
               Rent Properties
@@ -523,12 +533,7 @@ export default function Home() {
         style={{
           display: "grid",
           gap: 20,
-          gridTemplateColumns:
-            vw > 1100
-              ? "repeat(5,1fr)"
-              : vw > 640
-              ? "repeat(3,1fr)"
-              : "repeat(2,1fr)",
+          gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
           maxWidth: 1100,
           margin: "0 auto",
         }}
@@ -551,6 +556,7 @@ export default function Home() {
               display: "block",
               color: "inherit",
               textDecoration: "none",
+              minHeight: 140,
             }}
           >
             <div
@@ -587,12 +593,7 @@ export default function Home() {
         style={{
           display: "grid",
           gap: 20,
-          gridTemplateColumns:
-            vw > 1100
-              ? "repeat(4,1fr)"
-              : vw > 640
-              ? "repeat(3,1fr)"
-              : "repeat(2,1fr)",
+          gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
           maxWidth: 1200,
           margin: "0 auto",
         }}
@@ -603,12 +604,27 @@ export default function Home() {
           "/assets/rent_lekki.jpg",
           "/assets/buy_lekki.jpg",
         ].map((p, i) => (
-          <img
+          <div
             key={i}
-            src={p}
-            alt="property"
-            style={{ width: "100%", borderRadius: 10 }}
-          />
+            style={{
+              width: "100%",
+              borderRadius: 10,
+              overflow: "hidden",
+              background: "#eee",
+            }}
+          >
+            <img
+              src={p}
+              alt="property"
+              style={{
+                width: "100%",
+                height: "auto",
+                display: "block",
+                aspectRatio: "4 / 3",
+                objectFit: "cover",
+              }}
+            />
+          </div>
         ))}
       </div>
     </div>
@@ -619,7 +635,7 @@ export default function Home() {
       style={{
         position: "relative",
         background: "url(/hero_bg.jpg) center/cover no-repeat",
-        height: 420,
+        minHeight: "clamp(320px, 40vh, 520px)",
         color: "#fff",
         display: "grid",
         placeItems: "center",
@@ -630,8 +646,10 @@ export default function Home() {
         style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,.6)" }}
       />
       <div style={{ position: "relative", maxWidth: 800, padding: "0 16px" }}>
-        <h2 style={{ fontSize: 28, fontWeight: 900 }}>Modern House Video</h2>
-        <p>
+        <h2 style={{ fontSize: "clamp(20px, 4vw, 28px)", fontWeight: 900 }}>
+          Modern House Video
+        </h2>
+        <p style={{ fontSize: "clamp(14px, 2.4vw, 16px)" }}>
           Hillstar is uniquely positioned to deliver high-impact solutions
           tailored to the nation’s dynamic infrastructure needs
         </p>
@@ -668,7 +686,6 @@ export default function Home() {
       [setIdx, vids.length]
     );
 
-    // lock scroll + keyboard
     useEffect(() => {
       if (!open) return;
       const onKey = (e) => {
@@ -742,22 +759,16 @@ export default function Home() {
             </button>
           </div>
 
-          {/* Player with 16:9 aspect ratio */}
+          {/* Player (responsive 16:9) */}
           <div
             style={{
               position: "relative",
               width: "100%",
-              aspectRatio: "16 / 9",
               background: "#000",
             }}
           >
-            {/* Fallback for browsers without aspect-ratio */}
-            <div
-              style={{
-                display: "none",
-                paddingTop: "56.25%",
-              }}
-            />
+            {/* Fallback height for older browsers */}
+            <div style={{ paddingTop: "56.25%" }} />
             <video
               key={vids[idx]?.src}
               controls
@@ -769,6 +780,7 @@ export default function Home() {
                 height: "100%",
                 objectFit: "contain",
                 background: "#000",
+                display: "block",
               }}
               src={vids[idx]?.src}
             />
@@ -855,7 +867,6 @@ export default function Home() {
                     padding: 6,
                   }}
                 >
-                  {/* Simple label chip; replace with image poster if available */}
                   <span
                     style={{
                       display: "inline-block",
@@ -897,14 +908,14 @@ export default function Home() {
       <img
         src="/assets/villa.png"
         alt="about"
-        style={{ width: "100%", borderRadius: 10 }}
+        style={{ width: "100%", borderRadius: 10, display: "block" }}
       />
       <div>
         <h4 style={{ color: BRAND.red, fontWeight: 800 }}>ABOUT US</h4>
-        <h2 style={{ fontSize: 28, fontWeight: 900 }}>
+        <h2 style={{ fontSize: "clamp(22px, 3.6vw, 28px)", fontWeight: 900 }}>
           Building Nigeria’s Future, One Landmark at a Time
         </h2>
-        <p>
+        <p style={{ fontSize: "clamp(14px, 2.5vw, 16px)" }}>
           Established in 1992, Hillstar Nigeria Limited is a pioneering
           indigenous infrastructure company delivering comprehensive
           construction, engineering, and consultancy solutions to both public

@@ -74,7 +74,7 @@ const Svg = {
     <svg width={size} height={size} viewBox="0 0 24 24" {...p}>
       <path
         fill="currentColor"
-        d="M11 2h2v4h-2V2Zm7.778 2.222l1.414 1.414l-2.828 2.828l-1.414-1.414l2.828-2.828ZM2.808 3.636l1.414-1.414l2.828 2.828L5.636 6.464L2.808 3.636ZM12 8a2 2 0 1 1 0 4a2 2 0 0 1 0-4Zm-2 6h4l3 8h-2l-1-3h-2l-1 3H7l3-8Zm2.5 3l-.5-1.333L11.5 17h1Z"
+        d="M11 2h2v4h-2V2Zm7.778 2.222l1.414 1.414-2.828 2.828-1.414-1.414 2.828-2.828ZM2.808 3.636 4.222 2.222 7.05 5.05 5.636 6.464 2.808 3.636ZM12 8a2 2 0 1 1 0 4 2 2 0 0 1 0-4Zm-2 6h4l3 8h-2l-1-3h-2l-1 3H7l3-8Zm2.5 3l-.5-1.333L11.5 17h1Z"
       />
     </svg>
   ),
@@ -339,7 +339,7 @@ export default function Contact() {
                 style={{
                   display: "grid",
                   gap: 12,
-                  gridTemplateColumns: "repeat(2,1fr)",
+                  gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
                 }}
               >
                 {sectors.map((s) => (
@@ -391,6 +391,7 @@ export default function Contact() {
                 display: "flex",
                 gap: 10,
                 justifyContent: isWide ? "flex-start" : "center",
+                flexWrap: "wrap",
               }}
             >
               {SOCIALS.slice(0, 4).map(({ name, href, Icon: IC }) => (
@@ -485,6 +486,8 @@ export default function Contact() {
               src="/assets/hillstar-logo.png"
               alt="logo"
               style={{ height: 40 }}
+              loading="lazy"
+              decoding="async"
             />
             <span style={{ color: BRAND.red, fontWeight: 900, fontSize: 20 }}>
               Hillstar
@@ -548,7 +551,7 @@ export default function Contact() {
     <div
       style={{
         display: "grid",
-        gridTemplateColumns: vw > 900 ? "1fr 1fr" : "1fr",
+        gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
         gap: 12,
       }}
     >
@@ -569,12 +572,10 @@ export default function Contact() {
     phone: "",
     category: "General Enquiry",
     message: "",
-    // anti-spam
     honey: "",
     mathA: Math.floor(1 + Math.random() * 4),
     mathB: Math.floor(1 + Math.random() * 4),
     mathAnswer: "",
-    // Real Estate
     re_intent: "Buy",
     re_bedrooms: "Any",
     re_budgetMin: "",
@@ -590,17 +591,14 @@ export default function Contact() {
     re_preferredDate: "",
     re_preferredTime: "",
     re_propertyRef: prefillRef,
-    // Hospitality
     h_checkIn: "",
     h_checkOut: "",
     h_guests: 1,
     h_rooms: 1,
-    // RFP
     rfp_org: "",
     rfp_budget: "",
     rfp_deadline: "",
     rfp_files: [],
-    // Careers
     cv_files: [],
     consent: true,
   });
@@ -718,7 +716,7 @@ export default function Contact() {
           background: `url(/assets/hero3.png) center/cover no-repeat`,
           color: "#fff",
           position: "relative",
-          height: 300,
+          height: "clamp(260px, 40vh, 420px)",
           display: "grid",
           placeItems: "center",
           textAlign: "center",
@@ -732,10 +730,16 @@ export default function Contact() {
           }}
         />
         <div style={{ position: "relative", width: "min(900px,92vw)" }}>
-          <h1 style={{ fontSize: 40, fontWeight: 900, margin: 0 }}>
+          <h1
+            style={{
+              fontSize: "clamp(26px, 5vw, 40px)",
+              fontWeight: 900,
+              margin: 0,
+            }}
+          >
             Contact Hillstar
           </h1>
-          <p style={{ marginTop: 8, fontSize: 18 }}>
+          <p style={{ marginTop: 8, fontSize: "clamp(14px, 2.6vw, 18px)" }}>
             Let’s discuss your project, schedule a viewing, or book a stay.
           </p>
         </div>
@@ -747,12 +751,19 @@ export default function Contact() {
           style={{
             display: "grid",
             gap: 24,
-            gridTemplateColumns: vw > 1000 ? "1.1fr 1fr" : "1fr",
+            gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
+            alignItems: "start",
           }}
         >
           {/* Left: Form */}
           <div>
-            <h2 style={{ fontSize: 26, fontWeight: 900, marginBottom: 8 }}>
+            <h2
+              style={{
+                fontSize: "clamp(20px, 3.4vw, 26px)",
+                fontWeight: 900,
+                marginBottom: 8,
+              }}
+            >
               Send us a message
             </h2>
             <form onSubmit={handleSubmit} style={{ display: "grid", gap: 12 }}>
@@ -893,7 +904,14 @@ export default function Contact() {
                   </Row>
                   <div>
                     <div style={label}>Preferred Locations</div>
-                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                    <div
+                      style={{
+                        display: "grid",
+                        gap: 8,
+                        gridTemplateColumns:
+                          "repeat(auto-fit, minmax(140px, 1fr))",
+                      }}
+                    >
                       {["Ikoyi", "Lekki", "VI", "Ikate", "Oniru"].map((loc) => (
                         <label
                           key={loc}
@@ -904,6 +922,7 @@ export default function Contact() {
                             border: "1px solid #eee",
                             padding: "8px 10px",
                             borderRadius: 8,
+                            background: "#fafafa",
                           }}
                         >
                           <input
@@ -920,7 +939,7 @@ export default function Contact() {
                         </label>
                       ))}
                       <input
-                        style={{ ...input, width: 220 }}
+                        style={{ ...input, gridColumn: "1 / -1" }}
                         placeholder="Other (type)"
                         value={form.re_locations.Other}
                         onChange={(e) =>
@@ -1436,7 +1455,8 @@ export default function Contact() {
           style={{
             display: "grid",
             gap: 24,
-            gridTemplateColumns: vw > 1000 ? "1.1fr 1fr" : "1fr",
+            gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
+            alignItems: "start",
           }}
         >
           <div>
@@ -1447,7 +1467,7 @@ export default function Contact() {
               title="Hillstar HQ Map"
               style={{
                 width: "100%",
-                height: 320,
+                height: "clamp(220px, 45vw, 360px)",
                 border: 0,
                 borderRadius: 12,
               }}
@@ -1498,7 +1518,13 @@ export default function Contact() {
       <Section
         style={{ background: BRAND.black, color: "#fff", textAlign: "center" }}
       >
-        <h2 style={{ fontSize: 26, fontWeight: 900, margin: 0 }}>
+        <h2
+          style={{
+            fontSize: "clamp(20px, 3.4vw, 26px)",
+            fontWeight: 900,
+            margin: 0,
+          }}
+        >
           Prefer a quick chat?
         </h2>
         <p style={{ opacity: 0.9, marginTop: 8 }}>
@@ -1517,6 +1543,7 @@ export default function Contact() {
               borderRadius: 10,
               padding: "12px 18px",
               fontWeight: 900,
+              width: "min(360px, 100%)",
             }}
           >
             Message us on WhatsApp

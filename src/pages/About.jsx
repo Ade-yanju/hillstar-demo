@@ -156,7 +156,6 @@ export default function About() {
 
   /* ------------- Enhanced mobile menu overlay (rich content) --------- */
   function MenuOverlay({ onClose }) {
-    // lock body scroll
     useEffect(() => {
       const prev = document.body.style.overflow;
       document.body.style.overflow = "hidden";
@@ -256,7 +255,8 @@ export default function About() {
                 style={{
                   display: "grid",
                   gap: 12,
-                  gridTemplateColumns: "repeat(2,1fr)",
+                  gridTemplateColumns:
+                    "repeat(auto-fit, minmax(180px, 1fr))",
                 }}
               >
                 {sectors.map((s) => (
@@ -310,6 +310,7 @@ export default function About() {
                 display: "flex",
                 gap: 10,
                 justifyContent: isWide ? "flex-start" : "center",
+                flexWrap: "wrap",
               }}
             >
               {SOCIALS.slice(0, 4).map(({ name, href, Icon: IC }) => (
@@ -404,6 +405,8 @@ export default function About() {
               src="/assets/hillstar-logo.png"
               alt="logo"
               style={{ height: 40 }}
+              loading="lazy"
+              decoding="async"
             />
             <span style={{ color: BRAND.red, fontWeight: 900, fontSize: 20 }}>
               Hillstar
@@ -449,6 +452,15 @@ export default function About() {
     </section>
   );
 
+  const smallCta = () => ({
+    padding: "8px 12px",
+    borderRadius: 8,
+    background: "#eee",
+    border: "none",
+    fontWeight: 700,
+    cursor: "pointer",
+  });
+
   const Pill = ({ k, v }) => (
     <div
       style={{
@@ -460,13 +472,17 @@ export default function About() {
         gap: 4,
       }}
     >
-      <div style={{ fontSize: 28, fontWeight: 900, color: BRAND.red }}>{v}</div>
+      <div
+        style={{ fontSize: "clamp(20px, 4vw, 28px)", fontWeight: 900, color: BRAND.red }}
+      >
+        {v}
+      </div>
       <div style={{ fontWeight: 700 }}>{k}</div>
     </div>
   );
 
   const PersonCard = ({ p, onOpen }) => (
-    <div
+    <article
       style={{
         border: "1px solid #eee",
         borderRadius: 12,
@@ -479,10 +495,12 @@ export default function About() {
       <div
         style={{
           width: "100%",
-          aspectRatio: "4/3",
+          aspectRatio: "4 / 3",
           borderRadius: 10,
           background: `#f3f3f3 url(${p.img}) center/cover no-repeat`,
         }}
+        aria-label={`${p.name} portrait`}
+        role="img"
       />
       <div style={{ fontWeight: 900 }}>{p.name}</div>
       <div style={{ opacity: 0.8 }}>{p.title}</div>
@@ -501,7 +519,7 @@ export default function About() {
           </a>
         )}
       </div>
-    </div>
+    </article>
   );
 
   function PersonModal({ person, onClose }) {
@@ -528,11 +546,12 @@ export default function About() {
           display: "grid",
           placeItems: "center",
           zIndex: 3000,
+          padding: 12,
         }}
       >
         <div
           style={{
-            width: "min(900px,92vw)",
+            width: "min(900px,96vw)",
             background: "#fff",
             borderRadius: 12,
             overflow: "hidden",
@@ -559,9 +578,10 @@ export default function About() {
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: vw > 800 ? "1.2fr 1fr" : "1fr",
               gap: 16,
               padding: 16,
+              gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+              alignItems: "start",
             }}
           >
             <div>
@@ -582,7 +602,8 @@ export default function About() {
             </div>
             <div
               style={{
-                height: 280,
+                width: "100%",
+                aspectRatio: "4 / 3",
                 borderRadius: 12,
                 background: `#f3f3f3 url(${person.img}) center/cover no-repeat`,
               }}
@@ -592,15 +613,6 @@ export default function About() {
       </div>
     );
   }
-
-  const smallCta = () => ({
-    padding: "8px 12px",
-    borderRadius: 8,
-    background: "#eee",
-    border: "none",
-    fontWeight: 700,
-    cursor: "pointer",
-  });
 
   /* ------------------------------- PAGE ------------------------------- */
   const [openPerson, setOpenPerson] = useState(null);
@@ -616,7 +628,8 @@ export default function About() {
           background: `url(/assets/about_red.jpg) center/cover no-repeat`,
           color: "#fff",
           position: "relative",
-          height: 340,
+          height: "min(70vh, 520px)",
+          minHeight: 320,
           display: "grid",
           placeItems: "center",
           textAlign: "center",
@@ -630,10 +643,10 @@ export default function About() {
           }}
         />
         <div style={{ position: "relative", width: "min(900px,92vw)" }}>
-          <h1 style={{ fontSize: 40, fontWeight: 900, margin: 0 }}>
+          <h1 style={{ fontSize: "clamp(26px, 5vw, 40px)", fontWeight: 900, margin: 0 }}>
             About Hillstar Nigeria Limited
           </h1>
-          <p style={{ marginTop: 10, fontSize: 18 }}>
+          <p style={{ marginTop: 10, fontSize: "clamp(14px, 2.6vw, 18px)" }}>
             Building Nigeria’s future through resilient infrastructure,
             sustainable energy and people-first places.
           </p>
@@ -646,11 +659,12 @@ export default function About() {
           style={{
             display: "grid",
             gap: 24,
-            gridTemplateColumns: isWide ? "1.15fr 1fr" : "1fr",
+            gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+            alignItems: "center",
           }}
         >
           <div>
-            <h2 style={{ fontSize: 28, fontWeight: 900, marginBottom: 8 }}>
+            <h2 style={{ fontSize: "clamp(22px, 3.5vw, 28px)", fontWeight: 900, marginBottom: 8 }}>
               Who We Are
             </h2>
             <p>
@@ -679,8 +693,11 @@ export default function About() {
             style={{
               borderRadius: 12,
               minHeight: 260,
+              aspectRatio: "4 / 3",
               background: "url(/assets/villa.png) center/cover no-repeat",
             }}
+            role="img"
+            aria-label="Hillstar project collage"
           />
         </div>
 
@@ -690,8 +707,7 @@ export default function About() {
             marginTop: 28,
             display: "grid",
             gap: 16,
-            gridTemplateColumns:
-              vw > 1100 ? "repeat(4,1fr)" : vw > 660 ? "repeat(2,1fr)" : "1fr",
+            gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
           }}
         >
           <Pill k="Years of Operations" v="30+" />
@@ -703,7 +719,7 @@ export default function About() {
 
       {/* Board of Trustees */}
       <Section style={{ background: BRAND.gray }}>
-        <h2 style={{ fontSize: 28, fontWeight: 900, marginBottom: 6 }}>
+        <h2 style={{ fontSize: "clamp(22px, 3.5vw, 28px)", fontWeight: 900, marginBottom: 6 }}>
           Board of Trustees
         </h2>
         <p style={{ opacity: 0.85, marginBottom: 16 }}>
@@ -714,12 +730,7 @@ export default function About() {
           style={{
             display: "grid",
             gap: 16,
-            gridTemplateColumns:
-              vw > 1100
-                ? "repeat(4,1fr)"
-                : vw > 800
-                ? "repeat(3,1fr)"
-                : "repeat(2,1fr)",
+            gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
           }}
         >
           {TRUSTEES.map((p) => (
@@ -730,7 +741,7 @@ export default function About() {
 
       {/* Executive Management */}
       <Section>
-        <h2 style={{ fontSize: 28, fontWeight: 900, marginBottom: 6 }}>
+        <h2 style={{ fontSize: "clamp(22px, 3.5vw, 28px)", fontWeight: 900, marginBottom: 6 }}>
           Executive Management
         </h2>
         <p style={{ opacity: 0.85, marginBottom: 16 }}>
@@ -741,8 +752,7 @@ export default function About() {
           style={{
             display: "grid",
             gap: 16,
-            gridTemplateColumns:
-              vw > 1100 ? "repeat(3,1fr)" : vw > 800 ? "repeat(2,1fr)" : "1fr",
+            gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
           }}
         >
           {MANAGEMENT.map((p) => (
@@ -757,11 +767,11 @@ export default function About() {
           style={{
             display: "grid",
             gap: 24,
-            gridTemplateColumns: isWide ? "1fr 1fr" : "1fr",
+            gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
           }}
         >
           <div>
-            <h3 style={{ fontSize: 22, fontWeight: 900, marginBottom: 8 }}>
+            <h3 style={{ fontSize: "clamp(18px, 3vw, 22px)", fontWeight: 900, marginBottom: 8 }}>
               Corporate Governance
             </h3>
             <ul style={{ lineHeight: 1.9, margin: 0, paddingLeft: 18 }}>
@@ -780,7 +790,7 @@ export default function About() {
             </ul>
           </div>
           <div>
-            <h3 style={{ fontSize: 22, fontWeight: 900, marginBottom: 8 }}>
+            <h3 style={{ fontSize: "clamp(18px, 3vw, 22px)", fontWeight: 900, marginBottom: 8 }}>
               CSR & Sustainability
             </h3>
             <ul style={{ lineHeight: 1.9, margin: 0, paddingLeft: 18 }}>
@@ -803,7 +813,7 @@ export default function About() {
 
       {/* Partners / Certifications */}
       <Section>
-        <h2 style={{ fontSize: 28, fontWeight: 900, marginBottom: 6 }}>
+        <h2 style={{ fontSize: "clamp(22px, 3.5vw, 28px)", fontWeight: 900, marginBottom: 6 }}>
           Certifications & Partners
         </h2>
         <p style={{ opacity: 0.85 }}>
@@ -813,12 +823,7 @@ export default function About() {
           style={{
             display: "grid",
             gap: 14,
-            gridTemplateColumns:
-              vw > 1100
-                ? "repeat(6,1fr)"
-                : vw > 800
-                ? "repeat(4,1fr)"
-                : "repeat(2,1fr)",
+            gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
           }}
         >
           {[
@@ -846,7 +851,7 @@ export default function About() {
       <Section
         style={{ background: BRAND.black, color: "#fff", textAlign: "center" }}
       >
-        <h2 style={{ fontSize: 28, fontWeight: 900, margin: 0 }}>
+        <h2 style={{ fontSize: "clamp(22px, 3.5vw, 28px)", fontWeight: 900, margin: 0 }}>
           Work With Us
         </h2>
         <p style={{ opacity: 0.9, marginTop: 8 }}>
@@ -863,6 +868,7 @@ export default function About() {
               borderRadius: 10,
               padding: "12px 18px",
               fontWeight: 900,
+              width: "min(360px, 100%)",
             }}
           >
             Talk to our team

@@ -167,6 +167,17 @@ export default function Hospitality() {
         {children}
       </Link>
     );
+
+    // Lock/unlock scroll when menu is open
+    useEffect(() => {
+      if (!menuOpen) return;
+      const prev = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
+      return () => {
+        document.body.style.overflow = prev;
+      };
+    }, [menuOpen]);
+
     return (
       <div
         style={{
@@ -201,6 +212,8 @@ export default function Hospitality() {
               src="/assets/hillstar-logo.png"
               alt="logo"
               style={{ height: 40 }}
+              loading="lazy"
+              decoding="async"
             />
             <span style={{ color: BRAND.red, fontWeight: 900, fontSize: 20 }}>
               Hillstar
@@ -244,7 +257,10 @@ export default function Hospitality() {
               color: "#fff",
               display: "grid",
               placeItems: "center",
+              overflowY: "auto",
+              padding: 24,
             }}
+            onClick={() => setMenuOpen(false)}
           >
             <div style={{ position: "absolute", top: 12, right: 12 }}>
               <button
@@ -255,7 +271,15 @@ export default function Hospitality() {
                 <Icon.X />
               </button>
             </div>
-            <div style={{ textAlign: "center", display: "grid", gap: 20 }}>
+            <div
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                textAlign: "center",
+                display: "grid",
+                gap: 20,
+                width: "min(560px, 92vw)",
+              }}
+            >
               {[
                 { t: "HOME", to: "/" },
                 { t: "ABOUT", to: "/about" },
@@ -436,6 +460,7 @@ export default function Hospitality() {
             display: "flex",
             gap: 8,
             justifyContent: "flex-end",
+            flexWrap: "wrap",
           }}
         >
           <span
@@ -505,7 +530,8 @@ export default function Hospitality() {
             style={{
               display: "grid",
               gap: 16,
-              gridTemplateColumns: vw > 1000 ? "repeat(2,1fr)" : "1fr",
+              gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+              alignItems: "start",
             }}
           >
             {rooms.map((r, i) => (
@@ -516,12 +542,13 @@ export default function Hospitality() {
                   borderRadius: 12,
                   overflow: "hidden",
                   background: "#fff",
+                  display: "grid",
                 }}
               >
                 <div
                   style={{
                     background: `#000 url(${r.img}) center/cover no-repeat`,
-                    height: 220,
+                    height: "clamp(160px, 28vw, 240px)",
                   }}
                 />
                 <div style={{ padding: 14, display: "grid", gap: 8 }}>
@@ -558,7 +585,8 @@ export default function Hospitality() {
                   <div
                     style={{
                       display: "grid",
-                      gridTemplateColumns: "1fr 1fr",
+                      gridTemplateColumns:
+                        "repeat(auto-fit, minmax(120px, 1fr))",
                       gap: 6,
                     }}
                   >
@@ -594,6 +622,7 @@ export default function Hospitality() {
             display: "grid",
             placeItems: "center",
             zIndex: 4000,
+            padding: 12,
           }}
         >
           <form
@@ -669,7 +698,7 @@ export default function Hospitality() {
 
 /* ---------------------------- Modals & Admin ---------------------------- */
 
-function RoomDetailsModal({ room, onClose, vw }) {
+function RoomDetailsModal({ room, onClose /* vw not needed now */ }) {
   const onKey = useCallback(
     (e) => {
       if (e.key === "Escape") onClose();
@@ -677,11 +706,12 @@ function RoomDetailsModal({ room, onClose, vw }) {
     [onClose]
   );
   useEffect(() => {
+    const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     window.addEventListener("keydown", onKey);
     return () => {
       window.removeEventListener("keydown", onKey);
-      document.body.style.overflow = "";
+      document.body.style.overflow = prev;
     };
   }, [onKey]);
 
@@ -696,13 +726,14 @@ function RoomDetailsModal({ room, onClose, vw }) {
         display: "grid",
         placeItems: "center",
         zIndex: 3000,
+        padding: 12,
       }}
       onClick={onClose}
     >
       <div
         onClick={(e) => e.stopPropagation()}
         style={{
-          width: "min(900px, 92vw)",
+          width: "min(960px, 92vw)",
           background: "#fff",
           borderRadius: 12,
           overflow: "hidden",
@@ -719,6 +750,7 @@ function RoomDetailsModal({ room, onClose, vw }) {
             alignItems: "center",
             padding: 14,
             borderBottom: "1px solid #eee",
+            gap: 8,
           }}
         >
           <div style={{ fontWeight: 900 }}>{room.title}</div>
@@ -739,10 +771,11 @@ function RoomDetailsModal({ room, onClose, vw }) {
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: vw > 900 ? "1.3fr 1fr" : "1fr",
+            gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
             gap: 16,
             padding: 16,
             overflow: "auto",
+            alignItems: "start",
           }}
         >
           <div>
@@ -750,10 +783,10 @@ function RoomDetailsModal({ room, onClose, vw }) {
               style={{
                 background: `#000 url(${room.img}) center/cover no-repeat`,
                 borderRadius: 10,
-                height: 260,
+                height: "clamp(200px, 30vw, 320px)",
               }}
             />
-            {/* Optional inline tour still available in details */}
+            {/* Optional inline tour */}
             {room.tourSrc && (
               <div style={{ marginTop: 12 }}>
                 <VideoPlayer src={room.tourSrc} label="Room Tour" />
@@ -767,7 +800,7 @@ function RoomDetailsModal({ room, onClose, vw }) {
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: "1fr 1fr",
+                gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
                 gap: 8,
               }}
             >
@@ -818,11 +851,12 @@ function TourModal({ room, onClose }) {
   );
 
   useEffect(() => {
+    const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     window.addEventListener("keydown", onKey);
     return () => {
       window.removeEventListener("keydown", onKey);
-      document.body.style.overflow = "";
+      document.body.style.overflow = prev;
     };
   }, [onKey]);
 
@@ -846,7 +880,7 @@ function TourModal({ room, onClose }) {
       <div
         onClick={(e) => e.stopPropagation()}
         style={{
-          width: "min(720px, 92vw)", // narrower than before
+          width: "min(720px, 92vw)",
           background: "#fff",
           borderRadius: 12,
           overflow: "hidden",
@@ -1018,6 +1052,7 @@ function HospitalityAdmin({ onAdded }) {
           alignItems: "center",
           justifyContent: "space-between",
           gap: 10,
+          flexWrap: "wrap",
         }}
       >
         <strong>Admin — Add Room</strong>
@@ -1055,7 +1090,12 @@ function HospitalityAdmin({ onAdded }) {
           </div>
 
           <div
-            style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+              gap: 10,
+              alignItems: "start",
+            }}
           >
             <div>
               <div style={label}>Price</div>
@@ -1077,7 +1117,7 @@ function HospitalityAdmin({ onAdded }) {
                 }}
               >
                 <input
-                  style={{ ...input, flex: 1 }}
+                  style={{ ...input, flex: 1, minWidth: 0 }}
                   value={state.img}
                   onChange={(e) => set("img", e.target.value)}
                   placeholder="https://res.cloudinary.com/.../image.jpg"
@@ -1106,7 +1146,7 @@ function HospitalityAdmin({ onAdded }) {
               }}
             >
               <input
-                style={{ ...input, flex: 1 }}
+                style={{ ...input, flex: 1, minWidth: 0 }}
                 value={state.tourSrc}
                 onChange={(e) => set("tourSrc", e.target.value)}
                 placeholder="https://res.cloudinary.com/.../tour.mp4"
@@ -1126,7 +1166,7 @@ function HospitalityAdmin({ onAdded }) {
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: "repeat(4, 1fr)",
+              gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
               gap: 10,
             }}
           >
