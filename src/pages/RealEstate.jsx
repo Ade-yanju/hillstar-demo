@@ -10,7 +10,6 @@ import {
   slugify,
   Section,
   HeroStrip,
-  VideoPlayer,
   Spec,
   smallCta,
   tabBtn,
@@ -85,7 +84,6 @@ const ADMIN_PIN =
 const LS_ADMIN_ON_KEY = "hillstar.realestate.adminOn";
 
 export default function RealEstate() {
-  const ns = "realestate";
   const vw = useViewport();
   const scrollY = useScrollY();
   const nav = useNavigate();
@@ -141,6 +139,7 @@ export default function RealEstate() {
     setSearch(next, { replace: true });
   };
 
+  /* ---------- Top bar + Navbar (with mobile menu overlay + scroll lock) ---------- */
   const TopBar = () => (
     <div
       style={{
@@ -201,6 +200,72 @@ export default function RealEstate() {
     </div>
   );
 
+  function MenuOverlay({ onClose }) {
+    useEffect(() => {
+      const prev = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
+      return () => (document.body.style.overflow = prev);
+    }, []);
+    const items = [
+      { t: "HOME", to: "/" },
+      { t: "ABOUT", to: "/about" },
+      { t: "OUR SERVICES", to: "/services" },
+      { t: "OUR WORK", to: "/projects" },
+      { t: "CONTACT US", to: "/contact" },
+    ];
+    return (
+      <div
+        role="dialog"
+        aria-modal="true"
+        style={{
+          position: "fixed",
+          inset: 0,
+          background: "rgba(0,0,0,.92)",
+          color: "#fff",
+          zIndex: 2000,
+          overflowY: "auto",
+          padding: 24,
+        }}
+      >
+        <div style={{ position: "absolute", top: 12, right: 12 }}>
+          <button
+            onClick={onClose}
+            aria-label="Close menu"
+            style={{ background: "none", border: "none", color: "#fff" }}
+          >
+            <Icon.X />
+          </button>
+        </div>
+        <div
+          style={{
+            width: "min(1200px,92vw)",
+            margin: "0 auto",
+            paddingTop: 28,
+            display: "grid",
+            gap: 18,
+            textAlign: "center",
+          }}
+        >
+          {items.map((i) => (
+            <Link
+              key={i.t}
+              to={i.to}
+              onClick={onClose}
+              style={{
+                color: "#fff",
+                textDecoration: "none",
+                fontSize: "clamp(20px,4.5vw,28px)",
+                fontWeight: 800,
+              }}
+            >
+              {i.t}
+            </Link>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   const Navbar = () => {
     const isMobile = vw <= 900;
     const bg = scrollY > 8 ? BRAND.black : `rgba(11,11,11,0.85)`;
@@ -232,6 +297,7 @@ export default function RealEstate() {
             justifyContent: "space-between",
             alignItems: "center",
             height: 70,
+            minWidth: 0,
           }}
         >
           <div
@@ -241,12 +307,15 @@ export default function RealEstate() {
               alignItems: "center",
               gap: 8,
               cursor: "pointer",
+              minWidth: 0,
             }}
           >
             <img
               src="/assets/hillstar-logo.png"
               alt="logo"
               style={{ height: 40 }}
+              loading="lazy"
+              decoding="async"
             />
             <span style={{ color: BRAND.red, fontWeight: 900, fontSize: 20 }}>
               Hillstar
@@ -278,54 +347,7 @@ export default function RealEstate() {
             <Icon.Burger />
           </button>
         </div>
-        {menuOpen && (
-          <div
-            role="dialog"
-            aria-modal="true"
-            style={{
-              position: "fixed",
-              inset: 0,
-              background: "rgba(0,0,0,.9)",
-              zIndex: 2000,
-              color: "#fff",
-              display: "grid",
-              placeItems: "center",
-            }}
-          >
-            <div style={{ position: "absolute", top: 12, right: 12 }}>
-              <button
-                onClick={() => setMenuOpen(false)}
-                aria-label="Close menu"
-                style={{ background: "none", border: "none", color: "#fff" }}
-              >
-                <Icon.X />
-              </button>
-            </div>
-            <div style={{ textAlign: "center", display: "grid", gap: 20 }}>
-              {[
-                { t: "HOME", to: "/" },
-                { t: "ABOUT", to: "/about" },
-                { t: "OUR SERVICES", to: "/services" },
-                { t: "OUR WORK", to: "/projects" },
-                { t: "CONTACT US", to: "/contact" },
-              ].map((l) => (
-                <Link
-                  key={l.t}
-                  to={l.to}
-                  onClick={() => setMenuOpen(false)}
-                  style={{
-                    fontSize: 24,
-                    fontWeight: 700,
-                    color: "#fff",
-                    textDecoration: "none",
-                  }}
-                >
-                  {l.t}
-                </Link>
-              ))}
-            </div>
-          </div>
-        )}
+        {menuOpen && <MenuOverlay onClose={() => setMenuOpen(false)} />}
       </div>
     );
   };
@@ -494,6 +516,7 @@ export default function RealEstate() {
             display: "flex",
             gap: 8,
             justifyContent: "flex-end",
+            flexWrap: "wrap",
           }}
         >
           <span
@@ -566,7 +589,14 @@ export default function RealEstate() {
           </div>
         )}
 
-        <div style={{ display: "flex", gap: 10 }}>
+        <div
+          style={{
+            display: "flex",
+            gap: 10,
+            flexWrap: "wrap",
+            alignItems: "center",
+          }}
+        >
           <button onClick={() => setTab("buy")} style={tabBtn(tab === "buy")}>
             Buy Properties
           </button>
@@ -582,8 +612,9 @@ export default function RealEstate() {
             style={{
               display: "grid",
               gap: 16,
-              gridTemplateColumns: vw > 1000 ? "repeat(2,1fr)" : "1fr",
+              gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
               marginTop: 16,
+              alignItems: "stretch",
             }}
           >
             {listings[tab].map((l, i) => (
@@ -594,16 +625,25 @@ export default function RealEstate() {
                   borderRadius: 12,
                   overflow: "hidden",
                   background: "#fff",
+                  display: "grid",
                 }}
               >
                 <div
                   style={{
                     background: `#000 url(${l.img}) center/cover no-repeat`,
-                    height: 220,
+                    height: "clamp(180px, 30vw, 260px)",
                   }}
                 />
                 <div style={{ padding: 14, display: "grid", gap: 8 }}>
-                  <div style={{ fontWeight: 900, fontSize: 18 }}>{l.title}</div>
+                  <div
+                    style={{
+                      fontWeight: 900,
+                      fontSize: "clamp(16px, 2.4vw, 18px)",
+                      wordBreak: "break-word",
+                    }}
+                  >
+                    {l.title}
+                  </div>
                   <div style={{ color: BRAND.red, fontWeight: 800 }}>
                     {l.price}
                   </div>
@@ -638,7 +678,6 @@ export default function RealEstate() {
                       </button>
                     ) : null}
                   </div>
-                  {/* No inline VideoPlayer on cards (Airbnb-style) */}
                 </div>
               </div>
             ))}
@@ -653,7 +692,7 @@ export default function RealEstate() {
       {/* Dedicated Video Tour Modal */}
       {tourOf && <TourModal listing={tourOf} onClose={() => setTourOf(null)} />}
 
-      {/* Admin PIN modal (Projects.jsx style) */}
+      {/* Admin PIN modal */}
       {showPin && (
         <div
           role="dialog"
@@ -665,6 +704,7 @@ export default function RealEstate() {
             display: "grid",
             placeItems: "center",
             zIndex: 4000,
+            padding: 12,
           }}
         >
           <form
@@ -702,7 +742,12 @@ export default function RealEstate() {
               <div style={{ color: "#b91c1c", fontWeight: 700 }}>{pinErr}</div>
             )}
             <div
-              style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}
+              style={{
+                display: "flex",
+                gap: 8,
+                justifyContent: "flex-end",
+                flexWrap: "wrap",
+              }}
             >
               <button
                 type="button"
@@ -738,23 +783,36 @@ export default function RealEstate() {
   );
 }
 
-/* A tiny wrapper to keep videos perfectly responsive (16:9) */
-function ResponsiveVideo({ src, label }) {
+/* A tiny wrapper that uses a native <video> so taps work on iOS/Android */
+function ResponsiveVideo({ src /*, label*/ }) {
   return (
     <div
       style={{
-        position: "relative",
         width: "100%",
         aspectRatio: "16 / 9",
         background: "#000",
         borderRadius: 10,
         overflow: "hidden",
+        border: "1px solid #e5e7eb",
       }}
     >
-      {/* Fill the aspect-ratio box */}
-      <div style={{ position: "absolute", inset: 0 }}>
-        <VideoPlayer src={src} label={label} />
-      </div>
+      <video
+        src={src}
+        controls
+        playsInline
+        preload="metadata"
+        // For older iOS Safari:
+        // @ts-ignore - non-standard attribute but harmless cross-browser
+        webkit-playsinline="true"
+        style={{
+          display: "block",
+          width: "100%",
+          height: "100%",
+          objectFit: "cover",
+          outline: "none",
+          border: "0",
+        }}
+      />
     </div>
   );
 }
@@ -787,9 +845,12 @@ function DetailsModal({ listing, onClose, vw }) {
         display: "grid",
         placeItems: "center",
         zIndex: 3000,
+        padding: 12,
       }}
+      onClick={onClose}
     >
       <div
+        onClick={(e) => e.stopPropagation()}
         style={{
           width: "min(900px, 96vw)",
           maxHeight: "94vh",
@@ -808,6 +869,8 @@ function DetailsModal({ listing, onClose, vw }) {
             alignItems: "center",
             padding: 14,
             borderBottom: "1px solid #eee",
+            gap: 8,
+            flexWrap: "wrap",
           }}
         >
           <div style={{ fontWeight: 900 }}>{listing.title}</div>
@@ -825,12 +888,7 @@ function DetailsModal({ listing, onClose, vw }) {
             Close
           </button>
         </div>
-        <div
-          style={{
-            overflow: "auto",
-            padding: 16,
-          }}
-        >
+        <div style={{ overflow: "auto", padding: 16 }}>
           <div
             style={{
               display: "grid",
@@ -843,13 +901,11 @@ function DetailsModal({ listing, onClose, vw }) {
                 style={{
                   background: `#000 url(${listing.img}) center/cover no-repeat`,
                   borderRadius: 10,
-                  height: 260,
+                  height: "clamp(200px, 40vw, 300px)",
                 }}
               />
               <div style={{ marginTop: 12 }}>
-                {listing.tourSrc && (
-                  <ResponsiveVideo src={listing.tourSrc} label="Virtual Tour" />
-                )}
+                {listing.tourSrc && <ResponsiveVideo src={listing.tourSrc} />}
               </div>
             </div>
             <div style={{ display: "grid", gap: 10 }}>
@@ -859,7 +915,7 @@ function DetailsModal({ listing, onClose, vw }) {
               <div
                 style={{
                   display: "grid",
-                  gridTemplateColumns: "1fr 1fr",
+                  gridTemplateColumns: vw > 520 ? "1fr 1fr" : "1fr",
                   gap: 8,
                 }}
               >
@@ -974,9 +1030,12 @@ function TourModal({ listing, onClose }) {
         display: "grid",
         placeItems: "center",
         zIndex: 3200,
+        padding: 12,
       }}
+      onClick={onClose}
     >
       <div
+        onClick={(e) => e.stopPropagation()}
         style={{
           width: "min(900px, 96vw)",
           maxHeight: "94vh",
@@ -995,6 +1054,8 @@ function TourModal({ listing, onClose }) {
             alignItems: "center",
             padding: 12,
             borderBottom: "1px solid #eee",
+            gap: 8,
+            flexWrap: "wrap",
           }}
         >
           <div style={{ fontWeight: 900 }}>{listing.title} — Tour</div>
@@ -1013,7 +1074,7 @@ function TourModal({ listing, onClose }) {
           </button>
         </div>
         <div style={{ padding: 12, overflow: "auto" }}>
-          <ResponsiveVideo src={listing.tourSrc} label="Video Tour" />
+          <ResponsiveVideo src={listing.tourSrc} />
         </div>
       </div>
     </div>
@@ -1129,6 +1190,7 @@ function RealEstateAdmin({ onAdded }) {
           alignItems: "center",
           justifyContent: "space-between",
           gap: 10,
+          flexWrap: "wrap",
         }}
       >
         <strong>Admin — Add Listing</strong>
@@ -1156,7 +1218,11 @@ function RealEstateAdmin({ onAdded }) {
           )}
 
           <div
-            style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+              gap: 10,
+            }}
           >
             <div>
               <div style={label}>Kind</div>
@@ -1191,7 +1257,11 @@ function RealEstateAdmin({ onAdded }) {
           </div>
 
           <div
-            style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+              gap: 10,
+            }}
           >
             <div>
               <div style={label}>Cover Image</div>
@@ -1204,7 +1274,7 @@ function RealEstateAdmin({ onAdded }) {
                 }}
               >
                 <input
-                  style={{ ...input, flex: 1 }}
+                  style={{ ...input, flex: 1, minWidth: 0 }}
                   value={state.img}
                   onChange={(e) => set("img", e.target.value)}
                   placeholder="https://res.cloudinary.com/.../image.jpg"
@@ -1231,7 +1301,7 @@ function RealEstateAdmin({ onAdded }) {
                 }}
               >
                 <input
-                  style={{ ...input, flex: 1 }}
+                  style={{ ...input, flex: 1, minWidth: 0 }}
                   value={state.tourSrc}
                   onChange={(e) => set("tourSrc", e.target.value)}
                   placeholder="https://res.cloudinary.com/.../tour.mp4"
@@ -1260,7 +1330,7 @@ function RealEstateAdmin({ onAdded }) {
               }}
             >
               <input
-                style={{ ...input, flex: 1 }}
+                style={{ ...input, flex: 1, minWidth: 0 }}
                 value={state.brochure}
                 onChange={(e) => set("brochure", e.target.value)}
                 placeholder="https://res.cloudinary.com/.../brochure.pdf"
@@ -1280,7 +1350,7 @@ function RealEstateAdmin({ onAdded }) {
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: "repeat(5, 1fr)",
+              gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))",
               gap: 10,
             }}
           >
@@ -1317,7 +1387,7 @@ function RealEstateAdmin({ onAdded }) {
                 placeholder="e.g. 260 m²"
               />
             </div>
-            <div>
+            <div style={{ minWidth: 0 }}>
               <div style={label}>Address</div>
               <input
                 style={input}

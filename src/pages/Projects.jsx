@@ -1,34 +1,40 @@
 // src/pages/Projects.jsx
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { BRAND, Icon, SOCIALS, useViewport, useScrollY } from "../shared/Shared";
+import {
+  BRAND,
+  Icon,
+  SOCIALS,
+  useViewport,
+  useScrollY,
+} from "../shared/Shared";
 
 /* ------------------------------------------------------------------ *
- * Projects / Our Work
- *  - Filters, search, sort, grid/list
- *  - Cards -> details modal with gallery + <video>
- *  - Admin: gated by ?admin1 -> PIN modal; can add/edit/delete projects
- *  - Persistence:
- *      • Always localStorage (immediate)
- *      • Optional Cloudinary JSON DB sync (unsigned preset) for cross-user
+ * Projects / Our Work  — responsive version
  * ------------------------------------------------------------------ */
 
 /* ------------------------- Cloudinary + Admin env ------------------------- */
 const getEnv = (k) =>
-  (typeof import.meta !== "undefined" && import.meta.env && import.meta.env[k]) ??
+  (typeof import.meta !== "undefined" &&
+    import.meta.env &&
+    import.meta.env[k]) ??
   (typeof process !== "undefined" && process.env && process.env[k]);
 
 const CLOUD_NAME =
-  getEnv("VITE_CLOUDINARY_CLOUD_NAME") || getEnv("REACT_APP_CLOUDINARY_CLOUD_NAME");
+  getEnv("VITE_CLOUDINARY_CLOUD_NAME") ||
+  getEnv("REACT_APP_CLOUDINARY_CLOUD_NAME");
 
 const CLOUD_PRESET =
-  getEnv("VITE_CLOUDINARY_UNSIGNED_PRESET") || getEnv("REACT_APP_CLOUDINARY_UNSIGNED_PRESET");
+  getEnv("VITE_CLOUDINARY_UNSIGNED_PRESET") ||
+  getEnv("REACT_APP_CLOUDINARY_UNSIGNED_PRESET");
 
 const CLOUD_FOLDER = "hillstar/projects"; // for media uploads
 const CLOUD_DB_ID = "hillstar/projects_db"; // raw JSON DB public_id (single source)
 
 const ADMIN_PIN =
-  getEnv("VITE_HILLSTAR_ADMIN_PIN") || getEnv("REACT_APP_HILLSTAR_ADMIN_PIN") || "0809130732800";
+  getEnv("VITE_HILLSTAR_ADMIN_PIN") ||
+  getEnv("REACT_APP_HILLSTAR_ADMIN_PIN") ||
+  "0809130732800";
 
 /* ------------------------------- Storage Keys ----------------------------- */
 const LS_DB_KEY = "hillstar.projects.db.v2"; // the full DB (array of projects)
@@ -55,7 +61,8 @@ async function uploadToCloudinary(file, folder = CLOUD_FOLDER) {
   body.append("context", `alt=${file.name}`);
   const res = await fetch(url, { method: "POST", body });
   const json = await res.json();
-  if (!res.ok) throw new Error(json?.error?.message || "Cloudinary upload failed");
+  if (!res.ok)
+    throw new Error(json?.error?.message || "Cloudinary upload failed");
   return json.secure_url;
 }
 
@@ -79,7 +86,9 @@ async function saveDbToCloudinary(dbArray) {
   if (!CLOUD_NAME || !CLOUD_PRESET) return false;
   try {
     const url = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/raw/upload`;
-    const fileBlob = new Blob([JSON.stringify(dbArray)], { type: "application/json" });
+    const fileBlob = new Blob([JSON.stringify(dbArray)], {
+      type: "application/json",
+    });
     const body = new FormData();
     body.append("file", fileBlob);
     body.append("upload_preset", CLOUD_PRESET);
@@ -87,7 +96,8 @@ async function saveDbToCloudinary(dbArray) {
     body.append("overwrite", "true");
     const res = await fetch(url, { method: "POST", body });
     const json = await res.json();
-    if (!res.ok) throw new Error(json?.error?.message || "Cloudinary DB save failed");
+    if (!res.ok)
+      throw new Error(json?.error?.message || "Cloudinary DB save failed");
     return true;
   } catch {
     return false;
@@ -104,10 +114,15 @@ const SEED = [
     year: 2024,
     location: "Ikoyi, Lagos",
     cover: "/assets/villa.png",
-    gallery: ["/assets/villa.png", "/assets/buy_lekki.jpg", "/assets/rent_ikoyi.jpg"],
+    gallery: [
+      "/assets/villa.png",
+      "/assets/buy_lekki.jpg",
+      "/assets/rent_ikoyi.jpg",
+    ],
     video: "/tours/lekki.mp4",
     brochure: "/brochures/ikoyi.pdf",
-    summary: "High-spec 5-bed duplex with smart automation and rooftop sit-out.",
+    summary:
+      "High-spec 5-bed duplex with smart automation and rooftop sit-out.",
     metrics: [
       { k: "Units", v: "1" },
       { k: "Area", v: "420 m²" },
@@ -156,13 +171,14 @@ export default function Projects() {
   const scrollY = useScrollY();
   const nav = useNavigate();
   const [params, setParams] = useSearchParams();
-  const isWide = vw > 1024;
 
   /* ------------------------------ Admin Mode ------------------------------ */
-  // Modal appears only if URL has ?admin1 (or ?admin=1 to keep state).
   const hasAdminPrompt =
-    params.has("admin1") || (params.get("admin") === "1" && !localStorage.getItem(LS_ADMIN_ON_KEY));
-  const [adminOn, setAdminOn] = useState(localStorage.getItem(LS_ADMIN_ON_KEY) === "1");
+    params.has("admin1") ||
+    (params.get("admin") === "1" && !localStorage.getItem(LS_ADMIN_ON_KEY));
+  const [adminOn, setAdminOn] = useState(
+    localStorage.getItem(LS_ADMIN_ON_KEY) === "1"
+  );
   const [showPin, setShowPin] = useState(hasAdminPrompt);
   const [pin, setPin] = useState("");
   const [pinErr, setPinErr] = useState("");
@@ -200,7 +216,6 @@ export default function Projects() {
   };
 
   /* ------------------------------- DB State ------------------------------- */
-  // Initial from localStorage or seed; then try to refresh from Cloudinary once.
   const [db, setDb] = useState(() => {
     try {
       const cached = JSON.parse(localStorage.getItem(LS_DB_KEY) || "null");
@@ -227,18 +242,17 @@ export default function Projects() {
     };
   }, []);
 
-  // Save DB locally + try cloud
   async function saveDb(nextArray) {
     setDb(nextArray);
     try {
       localStorage.setItem(LS_DB_KEY, JSON.stringify(nextArray));
     } catch {}
-    // best-effort cloud save; ignore failures
     await saveDbToCloudinary(nextArray);
   }
 
   const addProject = (p) => saveDb([{ ...p, id: `p_${Date.now()}` }, ...db]);
-  const updateProject = (id, patch) => saveDb(db.map((p) => (p.id === id ? { ...p, ...patch } : p)));
+  const updateProject = (id, patch) =>
+    saveDb(db.map((p) => (p.id === id ? { ...p, ...patch } : p)));
   const deleteProject = (id) => saveDb(db.filter((p) => p.id !== id));
 
   /* ----------------------- FILTERS / SEARCH / SORT ---------------------- */
@@ -271,11 +285,15 @@ export default function Projects() {
     let out = db.slice();
     if (sector !== "All") out = out.filter((p) => p.sector === sector);
     if (status !== "All") out = out.filter((p) => p.status === status);
-    if (year !== "All") out = out.filter((p) => String(p.year) === String(year));
+    if (year !== "All")
+      out = out.filter((p) => String(p.year) === String(year));
     if (query.trim()) {
       const q = query.trim().toLowerCase();
       out = out.filter((p) =>
-        [p.title, p.summary, p.sector, p.location, ...(p.tags || [])].join(" ").toLowerCase().includes(q)
+        [p.title, p.summary, p.sector, p.location, ...(p.tags || [])]
+          .join(" ")
+          .toLowerCase()
+          .includes(q)
       );
     }
     if (sort === "newest") out.sort((a, b) => (b.year || 0) - (a.year || 0));
@@ -298,7 +316,14 @@ export default function Projects() {
 
   /* --------------------------- NAV CHROME --------------------------- */
   const TopBar = () => (
-    <div style={{ background: BRAND.darkGray, color: "#fff", fontSize: 13, padding: "6px 0" }}>
+    <div
+      style={{
+        background: BRAND.darkGray,
+        color: "#fff",
+        fontSize: 13,
+        padding: "6px 0",
+      }}
+    >
       <div
         style={{
           width: "min(1200px,92vw)",
@@ -310,24 +335,38 @@ export default function Projects() {
           flexWrap: "wrap",
         }}
       >
-        <div style={{ display: "flex", gap: 18, alignItems: "center", flexWrap: "wrap" }}>
+        <div
+          style={{
+            display: "flex",
+            gap: 18,
+            alignItems: "center",
+            flexWrap: "wrap",
+          }}
+        >
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <Icon.Phone size={16} />
             <span>
-              <span style={{ color: BRAND.red }}>Free Call</span> +234 916 687 6907
+              <span style={{ color: BRAND.red }}>Free Call</span> +234 916 687
+              6907
             </span>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <Icon.Location size={16} />
             <span>
-              <span style={{ color: BRAND.red }}>Our Location:</span> 25 Kayode Otitoju, Lekki, Lagos
+              <span style={{ color: BRAND.red }}>Our Location:</span> 25 Kayode
+              Otitoju, Lekki, Lagos
             </span>
           </div>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <span>Connect with us</span>
           {SOCIALS.slice(0, 3).map(({ name, href, Icon: IC }) => (
-            <a key={name} href={href} aria-label={name} style={{ color: "#fff" }}>
+            <a
+              key={name}
+              href={href}
+              aria-label={name}
+              style={{ color: "#fff" }}
+            >
               <IC size={18} />
             </a>
           ))}
@@ -370,7 +409,11 @@ export default function Projects() {
         }}
       >
         <div style={{ position: "absolute", top: 12, right: 12 }}>
-          <button onClick={onClose} aria-label="Close menu" style={{ background: "none", border: "none", color: "#fff" }}>
+          <button
+            onClick={onClose}
+            aria-label="Close menu"
+            style={{ background: "none", border: "none", color: "#fff" }}
+          >
             <Icon.X />
           </button>
         </div>
@@ -384,13 +427,24 @@ export default function Projects() {
             gridTemplateColumns: vw > 900 ? "1.05fr 1fr" : "1fr",
           }}
         >
-          <nav style={{ textAlign: vw > 900 ? "left" : "center", display: "grid", gap: 18 }}>
+          <nav
+            style={{
+              textAlign: vw > 900 ? "left" : "center",
+              display: "grid",
+              gap: 18,
+            }}
+          >
             {items.map((i) => (
               <Link
                 key={i.t}
                 to={i.to}
                 onClick={onClose}
-                style={{ color: "#fff", textDecoration: "none", fontSize: 24, fontWeight: 800 }}
+                style={{
+                  color: "#fff",
+                  textDecoration: "none",
+                  fontSize: 24,
+                  fontWeight: 800,
+                }}
               >
                 {i.t}
               </Link>
@@ -405,8 +459,16 @@ export default function Projects() {
             }}
           >
             <div>
-              <div style={{ fontWeight: 800, opacity: 0.85, marginBottom: 8 }}>Sectors</div>
-              <div style={{ display: "grid", gap: 12, gridTemplateColumns: "repeat(2,1fr)" }}>
+              <div style={{ fontWeight: 800, opacity: 0.85, marginBottom: 8 }}>
+                Sectors
+              </div>
+              <div
+                style={{
+                  display: "grid",
+                  gap: 12,
+                  gridTemplateColumns: "repeat(2,1fr)",
+                }}
+              >
                 {sectors.map((s) => (
                   <Link
                     key={s.t}
@@ -423,12 +485,17 @@ export default function Projects() {
                       textDecoration: "none",
                     }}
                   >
-                    <s.Icon size={20} style={{ color: BRAND.red }} /> <span style={{ fontWeight: 700 }}>{s.t}</span>
+                    <s.Icon size={20} style={{ color: BRAND.red }} />{" "}
+                    <span style={{ fontWeight: 700 }}>{s.t}</span>
                   </Link>
                 ))}
               </div>
             </div>
-            <Link to="/contact" onClick={onClose} style={{ textDecoration: "none" }}>
+            <Link
+              to="/contact"
+              onClick={onClose}
+              style={{ textDecoration: "none" }}
+            >
               <button
                 style={{
                   background: BRAND.red,
@@ -454,7 +521,10 @@ export default function Projects() {
     const bg = scrollY > 8 ? BRAND.black : `rgba(11,11,11,0.85)`;
     const shadow = scrollY > 8 ? "0 6px 20px rgba(0,0,0,.25)" : "none";
     const MenuLink = ({ to, children }) => (
-      <Link to={to} style={{ color: "#fff", textDecoration: "none", fontWeight: 600 }}>
+      <Link
+        to={to}
+        style={{ color: "#fff", textDecoration: "none", fontWeight: 600 }}
+      >
         {children}
       </Link>
     );
@@ -477,13 +547,36 @@ export default function Projects() {
             justifyContent: "space-between",
             alignItems: "center",
             height: 70,
+            minWidth: 0,
           }}
         >
-          <div onClick={() => nav("/")} style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
-            <img src="/assets/hillstar-logo.png" alt="logo" style={{ height: 40 }} />
-            <span style={{ color: BRAND.red, fontWeight: 900, fontSize: 20 }}>Hillstar</span>
+          <div
+            onClick={() => nav("/")}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              cursor: "pointer",
+            }}
+          >
+            <img
+              src="/assets/hillstar-logo.png"
+              alt="logo"
+              style={{ height: 40 }}
+              loading="lazy"
+              decoding="async"
+            />
+            <span style={{ color: BRAND.red, fontWeight: 900, fontSize: 20 }}>
+              Hillstar
+            </span>
           </div>
-          <div style={{ display: isMobile ? "none" : "flex", gap: 20, alignItems: "center" }}>
+          <div
+            style={{
+              display: isMobile ? "none" : "flex",
+              gap: 20,
+              alignItems: "center",
+            }}
+          >
             <MenuLink to="/">HOME</MenuLink>
             <MenuLink to="/about">ABOUT</MenuLink>
             <MenuLink to="/services">OUR SERVICES</MenuLink>
@@ -493,7 +586,12 @@ export default function Projects() {
           <button
             onClick={() => setMenuOpen(true)}
             aria-label="Open menu"
-            style={{ display: isMobile ? "block" : "none", background: "none", border: "none", color: "#fff" }}
+            style={{
+              display: isMobile ? "block" : "none",
+              background: "none",
+              border: "none",
+              color: "#fff",
+            }}
           >
             <Icon.Burger />
           </button>
@@ -521,8 +619,16 @@ export default function Projects() {
     fontSize: 12,
   };
   const Section = ({ children, style }) => (
-    <section style={{ padding: "48px 0", background: "#fff", ...style }}>
-      <div style={{ width: "min(1200px,92vw)", margin: "0 auto" }}>{children}</div>
+    <section
+      style={{
+        padding: "clamp(28px, 6vw, 56px) 0",
+        background: "#fff",
+        ...style,
+      }}
+    >
+      <div style={{ width: "min(1200px,92vw)", margin: "0 auto" }}>
+        {children}
+      </div>
     </section>
   );
 
@@ -538,23 +644,52 @@ export default function Projects() {
           background: `url(/assets/about_red.jpg) center/cover no-repeat`,
           color: "#fff",
           position: "relative",
-          height: 320,
+          height: "clamp(220px, 40vh, 420px)",
           display: "grid",
           placeItems: "center",
           textAlign: "center",
         }}
       >
-        <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,.55)" }} />
-        <div style={{ position: "relative", width: "min(900px,92vw)" }}>
-          <h1 style={{ fontSize: 40, fontWeight: 900, margin: 0 }}>Our Work</h1>
-          <p style={{ marginTop: 8, fontSize: 18 }}>
-            A selection of projects across property, power, procurement and telecoms.
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            background: "rgba(0,0,0,.55)",
+          }}
+        />
+        <div
+          style={{
+            position: "relative",
+            width: "min(900px,92vw)",
+            padding: "0 8px",
+          }}
+        >
+          <h1
+            style={{
+              fontSize: "clamp(26px, 5vw, 40px)",
+              fontWeight: 900,
+              margin: 0,
+            }}
+          >
+            Our Work
+          </h1>
+          <p style={{ marginTop: 8, fontSize: "clamp(14px, 2.6vw, 18px)" }}>
+            A selection of projects across property, power, procurement and
+            telecoms.
           </p>
         </div>
 
         {/* Subtle admin badge & logout (only when ON) */}
         {adminOn && (
-          <div style={{ position: "absolute", top: 12, right: 12, display: "flex", gap: 8 }}>
+          <div
+            style={{
+              position: "absolute",
+              top: 12,
+              right: 12,
+              display: "flex",
+              gap: 8,
+            }}
+          >
             <span
               style={{
                 padding: "6px 10px",
@@ -589,25 +724,61 @@ export default function Projects() {
       {/* Filters */}
       <Section>
         <div style={{ display: "grid", gap: 12 }}>
-          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", justifyContent: "center" }}>
-            <button onClick={() => setSector("All")} style={chip(sector === "All")}>
+          <div
+            style={{
+              display: "flex",
+              gap: 10,
+              flexWrap: "wrap",
+              justifyContent: "center",
+            }}
+          >
+            <button
+              onClick={() => setSector("All")}
+              style={chip(sector === "All")}
+            >
               All Sectors
             </button>
-            {["Real Estate", "Hospitality", "Renewable Energy", "Procurement Services", "Telecom & Technology"].map(
-              (s) => (
-                <button key={s} onClick={() => setSector(s)} style={chip(sector === s)}>
-                  {s}
-                </button>
-              )
-            )}
-          </div>
-          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", justifyContent: "center" }}>
-            {["All", "ongoing", "completed", "soldout"].map((st) => (
-              <button key={st} onClick={() => setStatus(st)} style={chip(status === st)}>
-                {st === "All" ? "All Status" : st[0].toUpperCase() + st.slice(1)}
+            {[
+              "Real Estate",
+              "Hospitality",
+              "Renewable Energy",
+              "Procurement Services",
+              "Telecom & Technology",
+            ].map((s) => (
+              <button
+                key={s}
+                onClick={() => setSector(s)}
+                style={chip(sector === s)}
+              >
+                {s}
               </button>
             ))}
-            <select value={year} onChange={(e) => setYear(e.target.value)} style={{ ...pill, padding: "8px 12px" }}>
+          </div>
+          <div
+            style={{
+              display: "flex",
+              gap: 10,
+              flexWrap: "wrap",
+              justifyContent: "center",
+              alignItems: "center",
+            }}
+          >
+            {["All", "ongoing", "completed", "soldout"].map((st) => (
+              <button
+                key={st}
+                onClick={() => setStatus(st)}
+                style={chip(status === st)}
+              >
+                {st === "All"
+                  ? "All Status"
+                  : st[0].toUpperCase() + st.slice(1)}
+              </button>
+            ))}
+            <select
+              value={year}
+              onChange={(e) => setYear(e.target.value)}
+              style={{ ...pill, padding: "8px 12px" }}
+            >
               <option value="All">All Years</option>
               {allYears.map((y) => (
                 <option key={y} value={y}>
@@ -615,7 +786,11 @@ export default function Projects() {
                 </option>
               ))}
             </select>
-            <select value={sort} onChange={(e) => setSort(e.target.value)} style={{ ...pill, padding: "8px 12px" }}>
+            <select
+              value={sort}
+              onChange={(e) => setSort(e.target.value)}
+              style={{ ...pill, padding: "8px 12px" }}
+            >
               <option value="newest">Newest first</option>
               <option value="oldest">Oldest first</option>
               <option value="az">A → Z</option>
@@ -650,7 +825,8 @@ export default function Projects() {
                 padding: "10px 12px",
                 border: "1px solid #ddd",
                 borderRadius: 10,
-                width: 260,
+                width: vw < 560 ? "100%" : 260,
+                flex: vw < 560 ? "1 1 100%" : "0 0 auto",
               }}
             />
           </div>
@@ -662,13 +838,16 @@ export default function Projects() {
       {/* Grid/List */}
       <Section style={{ background: "#f5f5f5" }}>
         {page.length === 0 ? (
-          <div style={{ textAlign: "center", opacity: 0.8 }}>No matching projects.</div>
+          <div style={{ textAlign: "center", opacity: 0.8 }}>
+            No matching projects.
+          </div>
         ) : view === "grid" ? (
           <div
             style={{
               display: "grid",
               gap: 16,
-              gridTemplateColumns: isWide ? "repeat(3,1fr)" : vw > 640 ? "repeat(2,1fr)" : "1fr",
+              gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+              alignItems: "stretch",
             }}
           >
             {page.map((p) => (
@@ -726,9 +905,27 @@ export default function Projects() {
       )}
 
       {/* CTA */}
-      <Section style={{ background: BRAND.black, color: "#fff", textAlign: "center" }}>
-        <h2 style={{ fontSize: 26, fontWeight: 900, margin: 0 }}>Have a project in mind?</h2>
-        <p style={{ opacity: 0.9, marginTop: 8 }}>We’ll scope it and get back with options.</p>
+      <Section
+        style={{ background: BRAND.black, color: "#fff", textAlign: "center" }}
+      >
+        <h2
+          style={{
+            fontSize: "clamp(20px, 2.6vw, 26px)",
+            fontWeight: 900,
+            margin: 0,
+          }}
+        >
+          Have a project in mind?
+        </h2>
+        <p
+          style={{
+            opacity: 0.9,
+            marginTop: 8,
+            fontSize: "clamp(14px, 2.4vw, 16px)",
+          }}
+        >
+          We’ll scope it and get back with options.
+        </p>
         <Link to="/contact" style={{ textDecoration: "none" }}>
           <button
             style={{
@@ -758,6 +955,7 @@ export default function Projects() {
             display: "grid",
             placeItems: "center",
             zIndex: 4000,
+            padding: 12,
           }}
         >
           <form
@@ -773,7 +971,9 @@ export default function Projects() {
             }}
           >
             <div style={{ fontWeight: 900, fontSize: 18 }}>Admin Access</div>
-            <div style={{ opacity: 0.8, fontSize: 14 }}>Enter the admin PIN to manage projects.</div>
+            <div style={{ opacity: 0.8, fontSize: 14 }}>
+              Enter the admin PIN to manage projects.
+            </div>
             <input
               type="password"
               autoFocus
@@ -783,10 +983,23 @@ export default function Projects() {
                 setPinErr("");
               }}
               placeholder="PIN"
-              style={{ padding: "10px 12px", border: "1px solid #ddd", borderRadius: 10 }}
+              style={{
+                padding: "10px 12px",
+                border: "1px solid #ddd",
+                borderRadius: 10,
+              }}
             />
-            {pinErr && <div style={{ color: "#b91c1c", fontWeight: 700 }}>{pinErr}</div>}
-            <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+            {pinErr && (
+              <div style={{ color: "#b91c1c", fontWeight: 700 }}>{pinErr}</div>
+            )}
+            <div
+              style={{
+                display: "flex",
+                gap: 8,
+                justifyContent: "flex-end",
+                flexWrap: "wrap",
+              }}
+            >
               <button
                 type="button"
                 onClick={cancelAdminPrompt}
@@ -877,10 +1090,26 @@ function ProjectCard({ p, onOpen, admin, onAdmin, onDelete }) {
         overflow: "hidden",
         background: "#fff",
         display: "grid",
+        minWidth: 0,
       }}
     >
-      <div style={{ position: "relative", height: 180, background: `#000 url(${p.cover}) center/cover no-repeat` }}>
-        <div style={{ position: "absolute", top: 10, left: 10, display: "flex", gap: 8 }}>
+      <div
+        style={{
+          position: "relative",
+          height: "clamp(160px, 22vw, 220px)",
+          background: `#000 url(${p.cover}) center/cover no-repeat`,
+        }}
+      >
+        <div
+          style={{
+            position: "absolute",
+            top: 10,
+            left: 10,
+            display: "flex",
+            gap: 8,
+            flexWrap: "wrap",
+          }}
+        >
           <span
             style={{
               padding: "4px 8px",
@@ -895,15 +1124,25 @@ function ProjectCard({ p, onOpen, admin, onAdmin, onDelete }) {
           <span style={badgeStyle(p.status)}>{labelStatus(p.status)}</span>
         </div>
       </div>
-      <div style={{ padding: 12, display: "grid", gap: 8 }}>
-        <div style={{ fontWeight: 900, fontSize: 18 }}>{p.title}</div>
+      <div style={{ padding: 12, display: "grid", gap: 8, minWidth: 0 }}>
+        <div style={{ fontWeight: 900, fontSize: 18, wordBreak: "break-word" }}>
+          {p.title}
+        </div>
         <div style={{ opacity: 0.8, fontSize: 13 }}>
           {p.location} • {p.year}
         </div>
         <p style={{ margin: 0 }}>{p.summary}</p>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           {(p.tags || []).map((t, i) => (
-            <span key={i} style={{ padding: "6px 10px", border: "1px solid #eee", borderRadius: 999, fontSize: 12 }}>
+            <span
+              key={i}
+              style={{
+                padding: "6px 10px",
+                border: "1px solid #eee",
+                borderRadius: 999,
+                fontSize: 12,
+              }}
+            >
               {t}
             </span>
           ))}
@@ -918,7 +1157,9 @@ function ProjectCard({ p, onOpen, admin, onAdmin, onDelete }) {
             </a>
           )}
           <a
-            href={`https://wa.me/2349166876907?text=${encodeURIComponent("Project: " + p.title)}`}
+            href={`https://wa.me/2349166876907?text=${encodeURIComponent(
+              "Project: " + p.title
+            )}`}
             target="_blank"
             rel="noreferrer"
             style={btnGhost}
@@ -927,7 +1168,9 @@ function ProjectCard({ p, onOpen, admin, onAdmin, onDelete }) {
           </a>
         </div>
         {admin && (
-          <div style={{ marginTop: 6, display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <div
+            style={{ marginTop: 6, display: "flex", gap: 8, flexWrap: "wrap" }}
+          >
             <button onClick={() => setEditing(true)} style={btnAdmin}>
               Edit
             </button>
@@ -940,13 +1183,21 @@ function ProjectCard({ p, onOpen, admin, onAdmin, onDelete }) {
               Delete
             </button>
             <button
-              onClick={() => onAdmin(p.id, { status: p.status === "soldout" ? "ongoing" : "soldout" })}
+              onClick={() =>
+                onAdmin(p.id, {
+                  status: p.status === "soldout" ? "ongoing" : "soldout",
+                })
+              }
               style={btnAdmin}
             >
               {p.status === "soldout" ? "Unset Sold Out" : "Mark Sold Out"}
             </button>
             <button
-              onClick={() => onAdmin(p.id, { status: p.status === "completed" ? "ongoing" : "completed" })}
+              onClick={() =>
+                onAdmin(p.id, {
+                  status: p.status === "completed" ? "ongoing" : "completed",
+                })
+              }
               style={btnAdmin}
             >
               {p.status === "completed" ? "Mark Ongoing" : "Mark Completed"}
@@ -954,13 +1205,21 @@ function ProjectCard({ p, onOpen, admin, onAdmin, onDelete }) {
           </div>
         )}
       </div>
-      {editing && <EditModal p={p} onClose={() => setEditing(false)} onSave={(patch) => onAdmin(p.id, patch)} />}
+      {editing && (
+        <EditModal
+          p={p}
+          onClose={() => setEditing(false)}
+          onSave={(patch) => onAdmin(p.id, patch)}
+        />
+      )}
     </div>
   );
 }
 
 function ProjectRow({ p, onOpen, admin, onAdmin, onDelete }) {
   const [editing, setEditing] = useState(false);
+  const vw = useViewport();
+  const stacked = vw <= 720;
   return (
     <div
       style={{
@@ -969,18 +1228,46 @@ function ProjectRow({ p, onOpen, admin, onAdmin, onDelete }) {
         overflow: "hidden",
         background: "#fff",
         display: "grid",
-        gridTemplateColumns: "200px 1fr",
+        gridTemplateColumns: stacked ? "1fr" : "minmax(160px, 28vw) 1fr",
+        minWidth: 0,
       }}
     >
-      <div style={{ background: `#000 url(${p.cover}) center/cover no-repeat` }} />
-      <div style={{ padding: 12, display: "grid", gap: 8 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+      <div
+        style={{
+          background: `#000 url(${p.cover}) center/cover no-repeat`,
+          height: stacked ? "clamp(160px, 40vw, 220px)" : "auto",
+          minHeight: stacked ? undefined : 180,
+        }}
+      />
+      <div style={{ padding: 12, display: "grid", gap: 8, minWidth: 0 }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            flexWrap: "wrap",
+          }}
+        >
           <span style={{ fontWeight: 900, fontSize: 18 }}>{p.title}</span>
-          <span style={{ padding: "4px 8px", border: "1px solid #eee", borderRadius: 999, fontSize: 12 }}>
+          <span
+            style={{
+              padding: "4px 8px",
+              border: "1px solid #eee",
+              borderRadius: 999,
+              fontSize: 12,
+            }}
+          >
             {p.sector}
           </span>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            flexWrap: "wrap",
+          }}
+        >
           <span style={badgeStyle(p.status)}>{labelStatus(p.status)}</span>
         </div>
         <div style={{ opacity: 0.8, fontSize: 13 }}>
@@ -989,7 +1276,14 @@ function ProjectRow({ p, onOpen, admin, onAdmin, onDelete }) {
         <p style={{ margin: 0 }}>{p.summary}</p>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           {(p.metrics || []).map((m, i) => (
-            <div key={i} style={{ border: "1px solid #eee", borderRadius: 10, padding: "8px 10px" }}>
+            <div
+              key={i}
+              style={{
+                border: "1px solid #eee",
+                borderRadius: 10,
+                padding: "8px 10px",
+              }}
+            >
               <div style={{ fontSize: 12, opacity: 0.7 }}>{m.k}</div>
               <div style={{ fontWeight: 800 }}>{m.v}</div>
             </div>
@@ -1019,13 +1313,21 @@ function ProjectRow({ p, onOpen, admin, onAdmin, onDelete }) {
               Delete
             </button>
             <button
-              onClick={() => onAdmin(p.id, { status: p.status === "soldout" ? "ongoing" : "soldout" })}
+              onClick={() =>
+                onAdmin(p.id, {
+                  status: p.status === "soldout" ? "ongoing" : "soldout",
+                })
+              }
               style={btnAdmin}
             >
               {p.status === "soldout" ? "Unset Sold Out" : "Mark Sold Out"}
             </button>
             <button
-              onClick={() => onAdmin(p.id, { status: p.status === "completed" ? "ongoing" : "completed" })}
+              onClick={() =>
+                onAdmin(p.id, {
+                  status: p.status === "completed" ? "ongoing" : "completed",
+                })
+              }
               style={btnAdmin}
             >
               {p.status === "completed" ? "Mark Ongoing" : "Mark Completed"}
@@ -1033,7 +1335,13 @@ function ProjectRow({ p, onOpen, admin, onAdmin, onDelete }) {
           </div>
         )}
       </div>
-      {editing && <EditModal p={p} onClose={() => setEditing(false)} onSave={(patch) => onAdmin(p.id, patch)} />}
+      {editing && (
+        <EditModal
+          p={p}
+          onClose={() => setEditing(false)}
+          onSave={(patch) => onAdmin(p.id, patch)}
+        />
+      )}
     </div>
   );
 }
@@ -1057,15 +1365,21 @@ function DetailsModal({ p, onClose, onAdmin }) {
         display: "grid",
         placeItems: "center",
         zIndex: 3000,
+        padding: 12,
       }}
+      onClick={onClose}
     >
       <div
+        onClick={(e) => e.stopPropagation()}
         style={{
           width: "min(1000px,92vw)",
           background: "#fff",
           borderRadius: 12,
           overflow: "hidden",
           boxShadow: "0 20px 60px rgba(0,0,0,.4)",
+          maxHeight: "90vh",
+          display: "grid",
+          gridTemplateRows: "auto 1fr",
         }}
       >
         <div
@@ -1077,9 +1391,23 @@ function DetailsModal({ p, onClose, onAdmin }) {
             borderBottom: "1px solid #eee",
           }}
         >
-          <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              flexWrap: "wrap",
+            }}
+          >
             <div style={{ fontWeight: 900, fontSize: 18 }}>{p.title}</div>
-            <span style={{ padding: "4px 8px", border: "1px solid #eee", borderRadius: 999, fontSize: 12 }}>
+            <span
+              style={{
+                padding: "4px 8px",
+                border: "1px solid #eee",
+                borderRadius: 999,
+                fontSize: 12,
+              }}
+            >
               {p.sector}
             </span>
             <span style={badgeStyle(p.status)}>{labelStatus(p.status)}</span>
@@ -1105,19 +1433,22 @@ function DetailsModal({ p, onClose, onAdmin }) {
             gridTemplateColumns: vw > 900 ? "1.3fr 1fr" : "1fr",
             gap: 16,
             padding: 16,
+            overflow: "auto",
           }}
         >
           <div>
             <Gallery images={p.gallery} cover={p.cover} />
             {p.video && (
               <div style={{ marginTop: 12 }}>
-                <div style={{ fontWeight: 700, margin: "6px 0" }}>{p.title} — Tour</div>
+                <div style={{ fontWeight: 700, margin: "6px 0" }}>
+                  {p.title} — Tour
+                </div>
                 <video
                   controls
                   preload="metadata"
                   style={{
                     width: "100%",
-                    height: 260,
+                    height: "clamp(200px, 35vw, 320px)",
                     border: "1px solid #eee",
                     borderRadius: 10,
                     background: "#0e0e0e",
@@ -1134,9 +1465,22 @@ function DetailsModal({ p, onClose, onAdmin }) {
             </div>
             <p style={{ margin: 0 }}>{p.summary}</p>
             {(p.metrics || []).length > 0 && (
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0,1fr))", gap: 8 }}>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(3, minmax(0,1fr))",
+                  gap: 8,
+                }}
+              >
                 {p.metrics.map((m, i) => (
-                  <div key={i} style={{ border: "1px solid #eee", borderRadius: 8, padding: "8px 10px" }}>
+                  <div
+                    key={i}
+                    style={{
+                      border: "1px solid #eee",
+                      borderRadius: 8,
+                      padding: "8px 10px",
+                    }}
+                  >
                     <div style={{ fontSize: 12, opacity: 0.7 }}>{m.k}</div>
                     <div style={{ fontWeight: 800 }}>{m.v}</div>
                   </div>
@@ -1148,7 +1492,12 @@ function DetailsModal({ p, onClose, onAdmin }) {
                 {p.tags.map((t, i) => (
                   <span
                     key={i}
-                    style={{ padding: "6px 10px", border: "1px solid #eee", borderRadius: 999, fontSize: 12 }}
+                    style={{
+                      padding: "6px 10px",
+                      border: "1px solid #eee",
+                      borderRadius: 999,
+                      fontSize: 12,
+                    }}
                   >
                     {t}
                   </span>
@@ -1162,13 +1511,17 @@ function DetailsModal({ p, onClose, onAdmin }) {
                 </a>
               )}
               <a
-                href={`mailto:info@hillstar.com.ng?subject=${encodeURIComponent("Project: " + p.title)}`}
+                href={`mailto:info@hillstar.com.ng?subject=${encodeURIComponent(
+                  "Project: " + p.title
+                )}`}
                 style={btnPrimary}
               >
                 Enquire
               </a>
               <a
-                href={`https://wa.me/2349166876907?text=${encodeURIComponent("Project: " + p.title)}`}
+                href={`https://wa.me/2349166876907?text=${encodeURIComponent(
+                  "Project: " + p.title
+                )}`}
                 target="_blank"
                 rel="noreferrer"
                 style={btnGhost}
@@ -1179,13 +1532,22 @@ function DetailsModal({ p, onClose, onAdmin }) {
             {onAdmin && (
               <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                 <button
-                  onClick={() => onAdmin({ status: p.status === "soldout" ? "ongoing" : "soldout" })}
+                  onClick={() =>
+                    onAdmin({
+                      status: p.status === "soldout" ? "ongoing" : "soldout",
+                    })
+                  }
                   style={btnAdmin}
                 >
                   {p.status === "soldout" ? "Unset Sold Out" : "Mark Sold Out"}
                 </button>
                 <button
-                  onClick={() => onAdmin({ status: p.status === "completed" ? "ongoing" : "completed" })}
+                  onClick={() =>
+                    onAdmin({
+                      status:
+                        p.status === "completed" ? "ongoing" : "completed",
+                    })
+                  }
                   style={btnAdmin}
                 >
                   {p.status === "completed" ? "Mark Ongoing" : "Mark Completed"}
@@ -1206,26 +1568,38 @@ function Gallery({ images = [], cover }) {
     <div>
       <div
         style={{
-          background: imgs[idx] ? `#000 url(${imgs[idx]}) center/cover no-repeat` : "#f3f4f6",
-          height: 260,
+          background: imgs[idx]
+            ? `#000 url(${imgs[idx]}) center/cover no-repeat`
+            : "#f3f4f6",
+          height: "clamp(180px, 40vw, 320px)",
           borderRadius: 10,
           border: "1px solid #eee",
         }}
       />
       {imgs.length > 1 && (
-        <div style={{ display: "flex", gap: 8, marginTop: 8, overflowX: "auto", paddingBottom: 4 }}>
+        <div
+          style={{
+            display: "flex",
+            gap: 8,
+            marginTop: 8,
+            overflowX: "auto",
+            paddingBottom: 4,
+          }}
+        >
           {imgs.map((src, i) => (
             <button
               key={i}
               onClick={() => setIdx(i)}
               style={{
-                width: 80,
-                height: 60,
+                width: "clamp(60px, 10vw, 90px)",
+                height: "clamp(44px, 7.4vw, 66px)",
                 background: `#000 url(${src}) center/cover no-repeat`,
                 borderRadius: 8,
                 border: i === idx ? `2px solid ${BRAND.red}` : "1px solid #ddd",
                 flex: "0 0 auto",
+                cursor: "pointer",
               }}
+              aria-label={`Thumbnail ${i + 1}`}
             />
           ))}
         </div>
@@ -1250,10 +1624,20 @@ function AdminConsole({ onAdd }) {
     summary: "",
     tags: "",
   });
-  const [busy, setBusy] = useState({ cover: false, gallery: false, video: false, brochure: false });
+  const [busy, setBusy] = useState({
+    cover: false,
+    gallery: false,
+    video: false,
+    brochure: false,
+  });
   const [error, setError] = useState("");
 
-  const input = { padding: "10px 12px", border: "1px solid #ddd", borderRadius: 10, width: "100%" };
+  const input = {
+    padding: "10px 12px",
+    border: "1px solid #ddd",
+    borderRadius: 10,
+    width: "100%",
+  };
   const label = { fontWeight: 800, fontSize: 13 };
   const set = (k, v) => setState((s) => ({ ...s, [k]: v }));
 
@@ -1319,16 +1703,42 @@ function AdminConsole({ onAdd }) {
   });
 
   return (
-    <div style={{ border: "1px dashed #ccc", borderRadius: 12, padding: 12, background: "#fff" }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
+    <div
+      style={{
+        border: "1px dashed #ccc",
+        borderRadius: 12,
+        padding: 12,
+        background: "#fff",
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 10,
+          flexWrap: "wrap",
+        }}
+      >
         <strong>Admin Console</strong>
-        <div style={{ display: "flex", gap: 8 }}>
-          <a href="https://cloudinary.com" target="_blank" rel="noreferrer" style={{ fontSize: 12, opacity: 0.7, textDecoration: "none" }}>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <a
+            href="https://cloudinary.com"
+            target="_blank"
+            rel="noreferrer"
+            style={{ fontSize: 12, opacity: 0.7, textDecoration: "none" }}
+          >
             Powered by Cloudinary
           </a>
           <button
             onClick={() => setPanelOpen((s) => !s)}
-            style={{ padding: "8px 12px", borderRadius: 8, border: "1px solid #ddd", background: "#f9f9f9" }}
+            style={{
+              padding: "8px 12px",
+              borderRadius: 8,
+              border: "1px solid #ddd",
+              background: "#f9f9f9",
+              fontWeight: 800,
+            }}
           >
             {panelOpen ? "Hide" : "Add Project"}
           </button>
@@ -1336,28 +1746,56 @@ function AdminConsole({ onAdd }) {
       </div>
 
       {panelOpen && (
-        <form onSubmit={submit} style={{ display: "grid", gap: 10, marginTop: 10 }}>
-          {error && <div style={{ color: "#b91c1c", fontWeight: 700 }}>{error}</div>}
+        <form
+          onSubmit={submit}
+          style={{ display: "grid", gap: 10, marginTop: 10 }}
+        >
+          {error && (
+            <div style={{ color: "#b91c1c", fontWeight: 700 }}>{error}</div>
+          )}
 
           <div>
             <div style={label}>Title</div>
-            <input style={input} value={state.title} onChange={(e) => set("title", e.target.value)} required />
+            <input
+              style={input}
+              value={state.title}
+              onChange={(e) => set("title", e.target.value)}
+              required
+            />
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+              gap: 10,
+            }}
+          >
             <div>
               <div style={label}>Sector</div>
-              <select style={input} value={state.sector} onChange={(e) => set("sector", e.target.value)}>
-                {["Real Estate", "Hospitality", "Renewable Energy", "Procurement Services", "Telecom & Technology"].map(
-                  (s) => (
-                    <option key={s}>{s}</option>
-                  )
-                )}
+              <select
+                style={input}
+                value={state.sector}
+                onChange={(e) => set("sector", e.target.value)}
+              >
+                {[
+                  "Real Estate",
+                  "Hospitality",
+                  "Renewable Energy",
+                  "Procurement Services",
+                  "Telecom & Technology",
+                ].map((s) => (
+                  <option key={s}>{s}</option>
+                ))}
               </select>
             </div>
             <div>
               <div style={label}>Status</div>
-              <select style={input} value={state.status} onChange={(e) => set("status", e.target.value)}>
+              <select
+                style={input}
+                value={state.status}
+                onChange={(e) => set("status", e.target.value)}
+              >
                 {["ongoing", "completed", "soldout"].map((s) => (
                   <option key={s}>{s}</option>
                 ))}
@@ -1365,29 +1803,56 @@ function AdminConsole({ onAdd }) {
             </div>
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+              gap: 10,
+            }}
+          >
             <div>
               <div style={label}>Year</div>
-              <input type="number" style={input} value={state.year} onChange={(e) => set("year", e.target.value)} />
+              <input
+                type="number"
+                style={input}
+                value={state.year}
+                onChange={(e) => set("year", e.target.value)}
+              />
             </div>
             <div>
               <div style={label}>Location</div>
-              <input style={input} value={state.location} onChange={(e) => set("location", e.target.value)} />
+              <input
+                style={input}
+                value={state.location}
+                onChange={(e) => set("location", e.target.value)}
+              />
             </div>
           </div>
 
           {/* Cover */}
           <div style={{ display: "grid", gap: 6 }}>
             <div style={label}>Cover Image</div>
-            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+            <div
+              style={{
+                display: "flex",
+                gap: 8,
+                flexWrap: "wrap",
+                alignItems: "center",
+              }}
+            >
               <input
-                style={{ ...input, flex: 1 }}
+                style={{ ...input, flex: 1, minWidth: 0 }}
                 placeholder="https://res.cloudinary.com/.../cover.jpg"
                 value={state.cover}
                 onChange={(e) => set("cover", e.target.value)}
               />
               <label style={uploadBtn(busy.cover)}>
-                <input type="file" accept="image/*" hidden onChange={(e) => handleUpload("cover", e.target.files)} />
+                <input
+                  type="file"
+                  accept="image/*"
+                  hidden
+                  onChange={(e) => handleUpload("cover", e.target.files)}
+                />
                 {busy.cover ? "Uploading…" : "Upload"}
               </label>
             </div>
@@ -1407,14 +1872,34 @@ function AdminConsole({ onAdd }) {
           {/* Gallery */}
           <div style={{ display: "grid", gap: 6 }}>
             <div style={label}>Gallery</div>
-            <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+            <div
+              style={{
+                display: "flex",
+                gap: 8,
+                alignItems: "center",
+                flexWrap: "wrap",
+              }}
+            >
               <label style={uploadBtn(busy.gallery)}>
-                <input type="file" accept="image/*" multiple hidden onChange={(e) => handleUpload("gallery", e.target.files)} />
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  hidden
+                  onChange={(e) => handleUpload("gallery", e.target.files)}
+                />
                 {busy.gallery ? "Uploading…" : "Upload Images"}
               </label>
             </div>
             {state.gallery.length > 0 && (
-              <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 4 }}>
+              <div
+                style={{
+                  display: "flex",
+                  gap: 8,
+                  overflowX: "auto",
+                  paddingBottom: 4,
+                }}
+              >
                 {state.gallery.map((g, i) => (
                   <div key={i} style={{ position: "relative" }}>
                     <div
@@ -1453,15 +1938,27 @@ function AdminConsole({ onAdd }) {
           {/* Video */}
           <div style={{ display: "grid", gap: 6 }}>
             <div style={label}>Video (.mp4)</div>
-            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+            <div
+              style={{
+                display: "flex",
+                gap: 8,
+                flexWrap: "wrap",
+                alignItems: "center",
+              }}
+            >
               <input
-                style={{ ...input, flex: 1 }}
+                style={{ ...input, flex: 1, minWidth: 0 }}
                 placeholder="https://res.cloudinary.com/.../tour.mp4"
                 value={state.video}
                 onChange={(e) => set("video", e.target.value)}
               />
               <label style={uploadBtn(busy.video)}>
-                <input type="file" accept="video/*" hidden onChange={(e) => handleUpload("video", e.target.files)} />
+                <input
+                  type="file"
+                  accept="video/*"
+                  hidden
+                  onChange={(e) => handleUpload("video", e.target.files)}
+                />
                 {busy.video ? "Uploading…" : "Upload"}
               </label>
             </div>
@@ -1470,9 +1967,16 @@ function AdminConsole({ onAdd }) {
           {/* Brochure */}
           <div style={{ display: "grid", gap: 6 }}>
             <div style={label}>Brochure (.pdf)</div>
-            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+            <div
+              style={{
+                display: "flex",
+                gap: 8,
+                flexWrap: "wrap",
+                alignItems: "center",
+              }}
+            >
               <input
-                style={{ ...input, flex: 1 }}
+                style={{ ...input, flex: 1, minWidth: 0 }}
                 placeholder="https://res.cloudinary.com/.../brochure.pdf"
                 value={state.brochure}
                 onChange={(e) => set("brochure", e.target.value)}
@@ -1491,7 +1995,11 @@ function AdminConsole({ onAdd }) {
 
           <div>
             <div style={label}>Summary</div>
-            <textarea style={{ ...input, minHeight: 100 }} value={state.summary} onChange={(e) => set("summary", e.target.value)} />
+            <textarea
+              style={{ ...input, minHeight: 100 }}
+              value={state.summary}
+              onChange={(e) => set("summary", e.target.value)}
+            />
           </div>
 
           <div>
@@ -1540,10 +2048,20 @@ function EditModal({ p, onClose, onSave }) {
     summary: p.summary || "",
     tags: (p.tags || []).join(", "),
   });
-  const [busy, setBusy] = useState({ cover: false, gallery: false, video: false, brochure: false });
+  const [busy, setBusy] = useState({
+    cover: false,
+    gallery: false,
+    video: false,
+    brochure: false,
+  });
   const [error, setError] = useState("");
 
-  const input = { padding: "10px 12px", border: "1px solid #ddd", borderRadius: 10, width: "100%" };
+  const input = {
+    padding: "10px 12px",
+    border: "1px solid #ddd",
+    borderRadius: 10,
+    width: "100%",
+  };
   const label = { fontWeight: 800, fontSize: 13 };
   const set = (k, v) => setState((s) => ({ ...s, [k]: v }));
 
@@ -1610,6 +2128,7 @@ function EditModal({ p, onClose, onSave }) {
         display: "grid",
         placeItems: "center",
         zIndex: 3500,
+        padding: 12,
       }}
     >
       <form
@@ -1622,41 +2141,81 @@ function EditModal({ p, onClose, onSave }) {
           display: "grid",
           gap: 10,
           boxShadow: "0 20px 60px rgba(0,0,0,.4)",
+          maxHeight: "90vh",
+          overflow: "auto",
         }}
       >
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            gap: 8,
+            flexWrap: "wrap",
+          }}
+        >
           <div style={{ fontWeight: 900, fontSize: 18 }}>Edit Project</div>
           <button
             type="button"
             onClick={onClose}
-            style={{ border: "1px solid #ddd", background: "#fff", borderRadius: 8, padding: "6px 10px" }}
+            style={{
+              border: "1px solid #ddd",
+              background: "#fff",
+              borderRadius: 8,
+              padding: "6px 10px",
+            }}
           >
             Close
           </button>
         </div>
 
-        {error && <div style={{ color: "#b91c1c", fontWeight: 700 }}>{error}</div>}
+        {error && (
+          <div style={{ color: "#b91c1c", fontWeight: 700 }}>{error}</div>
+        )}
 
         <div style={{ display: "grid", gap: 10 }}>
           <div>
             <div style={label}>Title</div>
-            <input style={input} value={state.title} onChange={(e) => set("title", e.target.value)} required />
+            <input
+              style={input}
+              value={state.title}
+              onChange={(e) => set("title", e.target.value)}
+              required
+            />
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+              gap: 10,
+            }}
+          >
             <div>
               <div style={label}>Sector</div>
-              <select style={input} value={state.sector} onChange={(e) => set("sector", e.target.value)}>
-                {["Real Estate", "Hospitality", "Renewable Energy", "Procurement Services", "Telecom & Technology"].map(
-                  (s) => (
-                    <option key={s}>{s}</option>
-                  )
-                )}
+              <select
+                style={input}
+                value={state.sector}
+                onChange={(e) => set("sector", e.target.value)}
+              >
+                {[
+                  "Real Estate",
+                  "Hospitality",
+                  "Renewable Energy",
+                  "Procurement Services",
+                  "Telecom & Technology",
+                ].map((s) => (
+                  <option key={s}>{s}</option>
+                ))}
               </select>
             </div>
             <div>
               <div style={label}>Status</div>
-              <select style={input} value={state.status} onChange={(e) => set("status", e.target.value)}>
+              <select
+                style={input}
+                value={state.status}
+                onChange={(e) => set("status", e.target.value)}
+              >
                 {["ongoing", "completed", "soldout"].map((s) => (
                   <option key={s}>{s}</option>
                 ))}
@@ -1664,24 +2223,55 @@ function EditModal({ p, onClose, onSave }) {
             </div>
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+              gap: 10,
+            }}
+          >
             <div>
               <div style={label}>Year</div>
-              <input type="number" style={input} value={state.year} onChange={(e) => set("year", e.target.value)} />
+              <input
+                type="number"
+                style={input}
+                value={state.year}
+                onChange={(e) => set("year", e.target.value)}
+              />
             </div>
             <div>
               <div style={label}>Location</div>
-              <input style={input} value={state.location} onChange={(e) => set("location", e.target.value)} />
+              <input
+                style={input}
+                value={state.location}
+                onChange={(e) => set("location", e.target.value)}
+              />
             </div>
           </div>
 
           {/* Cover */}
           <div style={{ display: "grid", gap: 6 }}>
             <div style={label}>Cover Image</div>
-            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-              <input style={{ ...input, flex: 1 }} value={state.cover} onChange={(e) => set("cover", e.target.value)} />
+            <div
+              style={{
+                display: "flex",
+                gap: 8,
+                flexWrap: "wrap",
+                alignItems: "center",
+              }}
+            >
+              <input
+                style={{ ...input, flex: 1, minWidth: 0 }}
+                value={state.cover}
+                onChange={(e) => set("cover", e.target.value)}
+              />
               <label style={uploadBtn(busy.cover)}>
-                <input type="file" accept="image/*" hidden onChange={(e) => handleUpload("cover", e.target.files)} />
+                <input
+                  type="file"
+                  accept="image/*"
+                  hidden
+                  onChange={(e) => handleUpload("cover", e.target.files)}
+                />
                 {busy.cover ? "Uploading…" : "Upload"}
               </label>
             </div>
@@ -1701,14 +2291,34 @@ function EditModal({ p, onClose, onSave }) {
           {/* Gallery */}
           <div style={{ display: "grid", gap: 6 }}>
             <div style={label}>Gallery</div>
-            <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+            <div
+              style={{
+                display: "flex",
+                gap: 8,
+                alignItems: "center",
+                flexWrap: "wrap",
+              }}
+            >
               <label style={uploadBtn(busy.gallery)}>
-                <input type="file" accept="image/*" multiple hidden onChange={(e) => handleUpload("gallery", e.target.files)} />
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  hidden
+                  onChange={(e) => handleUpload("gallery", e.target.files)}
+                />
                 {busy.gallery ? "Uploading…" : "Upload Images"}
               </label>
             </div>
             {state.gallery.length > 0 && (
-              <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 4 }}>
+              <div
+                style={{
+                  display: "flex",
+                  gap: 8,
+                  overflowX: "auto",
+                  paddingBottom: 4,
+                }}
+              >
                 {state.gallery.map((g, i) => (
                   <div key={i} style={{ position: "relative" }}>
                     <div
@@ -1747,10 +2357,26 @@ function EditModal({ p, onClose, onSave }) {
           {/* Video */}
           <div style={{ display: "grid", gap: 6 }}>
             <div style={label}>Video (.mp4)</div>
-            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-              <input style={{ ...input, flex: 1 }} value={state.video} onChange={(e) => set("video", e.target.value)} />
+            <div
+              style={{
+                display: "flex",
+                gap: 8,
+                flexWrap: "wrap",
+                alignItems: "center",
+              }}
+            >
+              <input
+                style={{ ...input, flex: 1, minWidth: 0 }}
+                value={state.video}
+                onChange={(e) => set("video", e.target.value)}
+              />
               <label style={uploadBtn(busy.video)}>
-                <input type="file" accept="video/*" hidden onChange={(e) => handleUpload("video", e.target.files)} />
+                <input
+                  type="file"
+                  accept="video/*"
+                  hidden
+                  onChange={(e) => handleUpload("video", e.target.files)}
+                />
                 {busy.video ? "Uploading…" : "Upload"}
               </label>
             </div>
@@ -1759,8 +2385,19 @@ function EditModal({ p, onClose, onSave }) {
           {/* Brochure */}
           <div style={{ display: "grid", gap: 6 }}>
             <div style={label}>Brochure (.pdf)</div>
-            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-              <input style={{ ...input, flex: 1 }} value={state.brochure} onChange={(e) => set("brochure", e.target.value)} />
+            <div
+              style={{
+                display: "flex",
+                gap: 8,
+                flexWrap: "wrap",
+                alignItems: "center",
+              }}
+            >
+              <input
+                style={{ ...input, flex: 1, minWidth: 0 }}
+                value={state.brochure}
+                onChange={(e) => set("brochure", e.target.value)}
+              />
               <label style={uploadBtn(busy.brochure)}>
                 <input
                   type="file"
@@ -1775,25 +2412,54 @@ function EditModal({ p, onClose, onSave }) {
 
           <div>
             <div style={label}>Summary</div>
-            <textarea style={{ ...input, minHeight: 100 }} value={state.summary} onChange={(e) => set("summary", e.target.value)} />
+            <textarea
+              style={{ ...input, minHeight: 100 }}
+              value={state.summary}
+              onChange={(e) => set("summary", e.target.value)}
+            />
           </div>
 
           <div>
             <div style={label}>Tags (comma separated)</div>
-            <input style={input} value={state.tags} onChange={(e) => set("tags", e.target.value)} placeholder="Smart Home, Rooftop" />
+            <input
+              style={input}
+              value={state.tags}
+              onChange={(e) => set("tags", e.target.value)}
+              placeholder="Smart Home, Rooftop"
+            />
           </div>
 
-          <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+          <div
+            style={{
+              display: "flex",
+              gap: 8,
+              justifyContent: "flex-end",
+              flexWrap: "wrap",
+            }}
+          >
             <button
               type="button"
               onClick={onClose}
-              style={{ padding: "10px 14px", borderRadius: 10, border: "1px solid #ddd", background: "#fff", fontWeight: 900 }}
+              style={{
+                padding: "10px 14px",
+                borderRadius: 10,
+                border: "1px solid #ddd",
+                background: "#fff",
+                fontWeight: 900,
+              }}
             >
               Cancel
             </button>
             <button
               type="submit"
-              style={{ padding: "10px 14px", borderRadius: 10, border: "none", background: BRAND.red, color: "#fff", fontWeight: 900 }}
+              style={{
+                padding: "10px 14px",
+                borderRadius: 10,
+                border: "none",
+                background: BRAND.red,
+                color: "#fff",
+                fontWeight: 900,
+              }}
             >
               Save Changes
             </button>

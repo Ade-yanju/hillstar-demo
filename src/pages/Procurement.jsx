@@ -26,8 +26,7 @@ const CLD_FOLDER = "hillstar/procurement";
 const MANIFEST_ID = `${CLD_FOLDER}/manifest.json`;
 
 async function cldUpload(file, folder = CLD_FOLDER) {
-  if (!CLOUD_NAME || !CLOUD_PRESET)
-    throw new Error("Cloudinary not configured");
+  if (!CLOUD_NAME || !CLOUD_PRESET) throw new Error("Cloudinary not configured");
   const isVideo = file.type?.startsWith("video/");
   const type = isVideo ? "video" : "raw";
   const url = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/${type}/upload`;
@@ -41,21 +40,17 @@ async function cldUpload(file, folder = CLD_FOLDER) {
   return json.secure_url;
 }
 async function publishManifest(data) {
-  if (!CLOUD_NAME || !CLOUD_PRESET)
-    throw new Error("Cloudinary not configured");
+  if (!CLOUD_NAME || !CLOUD_PRESET) throw new Error("Cloudinary not configured");
   const url = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/raw/upload`;
   const fd = new FormData();
-  const blob = new Blob([JSON.stringify(data, null, 2)], {
-    type: "application/json",
-  });
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
   fd.append("file", blob, "manifest.json");
   fd.append("upload_preset", CLOUD_PRESET);
   fd.append("public_id", MANIFEST_ID);
   fd.append("overwrite", "true");
   const res = await fetch(url, { method: "POST", body: fd });
   const json = await res.json();
-  if (!res.ok)
-    throw new Error(json?.error?.message || "Manifest publish failed");
+  if (!res.ok) throw new Error(json?.error?.message || "Manifest publish failed");
   return json.secure_url;
 }
 async function fetchManifest() {
@@ -89,12 +84,21 @@ export default function Procurement() {
     params.has("admin1") ||
     (params.get("admin") === "1" && !localStorage.getItem(LS_ADMIN_ON_KEY));
 
-  const [adminOn, setAdminOn] = useState(
-    localStorage.getItem(LS_ADMIN_ON_KEY) === "1"
-  );
+  const [adminOn, setAdminOn] = useState(localStorage.getItem(LS_ADMIN_ON_KEY) === "1");
   const [showPin, setShowPin] = useState(hasAdminPrompt);
   const [pin, setPin] = useState("");
   const [pinErr, setPinErr] = useState("");
+
+  // Lock body scroll when overlays are open
+  useEffect(() => {
+    const anyOverlay = menuOpen || showPin;
+    if (!anyOverlay) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [menuOpen, showPin]);
 
   const completeAdminLogin = () => {
     setAdminOn(true);
@@ -154,37 +158,25 @@ export default function Procurement() {
         }}
       >
         <div
-          style={{
-            display: "flex",
-            gap: 18,
-            alignItems: "center",
-            flexWrap: "wrap",
-          }}
+          style={{ display: "flex", gap: 18, alignItems: "center", flexWrap: "wrap" }}
         >
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <Icon.Phone size={16} />
             <span>
-              <span style={{ color: BRAND.red }}>Free Call</span> +234 916 687
-              6907
+              <span style={{ color: BRAND.red }}>Free Call</span> +234 916 687 6907
             </span>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <Icon.Location size={16} />
             <span>
-              <span style={{ color: BRAND.red }}>Our Location:</span> Lekki,
-              Lagos, Nigeria
+              <span style={{ color: BRAND.red }}>Our Location:</span> Lekki, Lagos, Nigeria
             </span>
           </div>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <span>Connect with us</span>
           {SOCIALS.slice(0, 3).map(({ name, href, Icon: IC }) => (
-            <a
-              key={name}
-              href={href}
-              aria-label={name}
-              style={{ color: "#fff" }}
-            >
+            <a key={name} href={href} aria-label={name} style={{ color: "#fff" }}>
               <IC size={18} />
             </a>
           ))}
@@ -198,10 +190,7 @@ export default function Procurement() {
     const bg = scrollY > 8 ? BRAND.black : `rgba(11,11,11,0.85)`;
     const shadow = scrollY > 8 ? "0 6px 20px rgba(0,0,0,.25)" : "none";
     const MenuLink = ({ to, children }) => (
-      <Link
-        to={to}
-        style={{ color: "#fff", textDecoration: "none", fontWeight: 600 }}
-      >
+      <Link to={to} style={{ color: "#fff", textDecoration: "none", fontWeight: 600 }}>
         {children}
       </Link>
     );
@@ -228,29 +217,18 @@ export default function Procurement() {
         >
           <div
             onClick={() => nav("/")}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              cursor: "pointer",
-            }}
+            style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}
           >
             <img
               src="/assets/hillstar-logo.png"
               alt="logo"
               style={{ height: 40 }}
+              loading="lazy"
+              decoding="async"
             />
-            <span style={{ color: BRAND.red, fontWeight: 900, fontSize: 20 }}>
-              Hillstar
-            </span>
+            <span style={{ color: BRAND.red, fontWeight: 900, fontSize: 20 }}>Hillstar</span>
           </div>
-          <div
-            style={{
-              display: isMobile ? "none" : "flex",
-              gap: 20,
-              alignItems: "center",
-            }}
-          >
+          <div style={{ display: isMobile ? "none" : "flex", gap: 20, alignItems: "center" }}>
             <MenuLink to="/">HOME</MenuLink>
             <MenuLink to="/about">ABOUT</MenuLink>
             <MenuLink to="/services">OUR SERVICES</MenuLink>
@@ -260,20 +238,17 @@ export default function Procurement() {
           <button
             onClick={() => setMenuOpen(true)}
             aria-label="Open menu"
-            style={{
-              display: isMobile ? "block" : "none",
-              background: "none",
-              border: "none",
-              color: "#fff",
-            }}
+            style={{ display: isMobile ? "block" : "none", background: "none", border: "none", color: "#fff" }}
           >
             <Icon.Burger />
           </button>
         </div>
+
         {menuOpen && (
           <div
             role="dialog"
             aria-modal="true"
+            onClick={() => setMenuOpen(false)}
             style={{
               position: "fixed",
               inset: 0,
@@ -282,6 +257,8 @@ export default function Procurement() {
               color: "#fff",
               display: "grid",
               placeItems: "center",
+              overflowY: "auto",
+              padding: 24,
             }}
           >
             <div style={{ position: "absolute", top: 12, right: 12 }}>
@@ -293,7 +270,10 @@ export default function Procurement() {
                 <Icon.X />
               </button>
             </div>
-            <div style={{ textAlign: "center", display: "grid", gap: 20 }}>
+            <div
+              onClick={(e) => e.stopPropagation()}
+              style={{ textAlign: "center", display: "grid", gap: 20, width: "min(560px,92vw)" }}
+            >
               {[
                 { t: "HOME", to: "/" },
                 { t: "ABOUT", to: "/about" },
@@ -305,12 +285,7 @@ export default function Procurement() {
                   key={l.t}
                   to={l.to}
                   onClick={() => setMenuOpen(false)}
-                  style={{
-                    fontSize: 24,
-                    fontWeight: 700,
-                    color: "#fff",
-                    textDecoration: "none",
-                  }}
+                  style={{ fontSize: 24, fontWeight: 700, color: "#fff", textDecoration: "none" }}
                 >
                   {l.t}
                 </Link>
@@ -341,8 +316,7 @@ export default function Procurement() {
     (async () => {
       const data = await fetchManifest();
       if (!mounted) return;
-      if (data && Array.isArray(data.videos))
-        setManifest({ videos: data.videos });
+      if (data && Array.isArray(data.videos)) setManifest({ videos: data.videos });
       setLoadingManifest(false);
     })();
     return () => {
@@ -350,10 +324,7 @@ export default function Procurement() {
     };
   }, []);
 
-  const videos = useMemo(
-    () => [...manifest.videos, ...baseVideos],
-    [manifest.videos, baseVideos]
-  );
+  const videos = useMemo(() => [...manifest.videos, ...baseVideos], [manifest.videos, baseVideos]);
 
   return (
     <>
@@ -370,6 +341,7 @@ export default function Procurement() {
             display: "flex",
             gap: 8,
             justifyContent: "flex-end",
+            flexWrap: "wrap",
           }}
         >
           <span
@@ -403,15 +375,12 @@ export default function Procurement() {
       )}
 
       <HeroStrip title="Procurement Services" />
+
       <Section
         title="What Procurement Means at Hillstar"
         subtitle="Highlights of our work with embedded tour videos."
         extraRight={
-          adminOn ? (
-            <span style={{ fontSize: 12, fontWeight: 800, color: BRAND.red }}>
-              Admin mode (Cloudinary enabled)
-            </span>
-          ) : null
+          adminOn ? <span style={{ fontSize: 12, fontWeight: 800, color: BRAND.red }}>Admin mode (Cloudinary enabled)</span> : null
         }
       >
         {adminOn && (
@@ -427,48 +396,55 @@ export default function Procurement() {
             }}
           />
         )}
-        {err && (
-          <div style={{ marginTop: 8, color: "#b91c1c", fontWeight: 700 }}>
-            {err}
-          </div>
-        )}
+        {err && <div style={{ marginTop: 8, color: "#b91c1c", fontWeight: 700 }}>{err}</div>}
 
         <ul style={{ lineHeight: 1.9 }}>
-          {[
-            "Local & international sourcing",
-            "QA/QC & compliance",
-            "Logistics & warehousing",
-          ].map((b, i) => (
+          {["Local & international sourcing", "QA/QC & compliance", "Logistics & warehousing"].map((b, i) => (
             <li key={i}>{b}</li>
           ))}
         </ul>
+
         {loadingManifest ? (
           <div style={{ opacity: 0.8, marginTop: 8 }}>Loading…</div>
         ) : (
           <div
             style={{
               display: "grid",
-              gap: 12,
-              gridTemplateColumns: vw > 900 ? "repeat(3,1fr)" : "1fr",
+              gap: 14,
               marginTop: 16,
+              gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+              alignItems: "start",
             }}
           >
             {videos.map((v, i) => (
-              <VideoPlayer
+              <div
                 key={`${v.src}-${i}`}
-                src={v.src}
-                label={v.label || `Procurement Tour #${i + 1}`}
-              />
+                style={{
+                  border: "1px solid #eee",
+                  borderRadius: 12,
+                  background: "#fff",
+                  padding: 10,
+                  display: "grid",
+                  gap: 8,
+                }}
+              >
+                <VideoPlayer
+                  src={v.src}
+                  label={v.label || `Procurement Tour #${i + 1}`}
+                  // let VideoPlayer size naturally; wrapper keeps layout tidy
+                />
+              </div>
             ))}
           </div>
         )}
       </Section>
 
-      {/* Admin PIN modal (Projects.jsx style) */}
+      {/* Admin PIN modal */}
       {showPin && (
         <div
           role="dialog"
           aria-modal="true"
+          onClick={cancelAdminPrompt}
           style={{
             position: "fixed",
             inset: 0,
@@ -476,9 +452,11 @@ export default function Procurement() {
             display: "grid",
             placeItems: "center",
             zIndex: 4000,
+            padding: 12,
           }}
         >
           <form
+            onClick={(e) => e.stopPropagation()}
             onSubmit={submitPin}
             style={{
               width: "min(420px,92vw)",
@@ -503,41 +481,20 @@ export default function Procurement() {
                 setPinErr("");
               }}
               placeholder="PIN"
-              style={{
-                padding: "10px 12px",
-                border: "1px solid #ddd",
-                borderRadius: 10,
-              }}
+              style={{ padding: "10px 12px", border: "1px solid #ddd", borderRadius: 10 }}
             />
-            {pinErr && (
-              <div style={{ color: "#b91c1c", fontWeight: 700 }}>{pinErr}</div>
-            )}
-            <div
-              style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}
-            >
+            {pinErr && <div style={{ color: "#b91c1c", fontWeight: 700 }}>{pinErr}</div>}
+            <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", flexWrap: "wrap" }}>
               <button
                 type="button"
                 onClick={cancelAdminPrompt}
-                style={{
-                  padding: "10px 14px",
-                  borderRadius: 10,
-                  border: "1px solid #ddd",
-                  background: "#fff",
-                  fontWeight: 900,
-                }}
+                style={{ padding: "10px 14px", borderRadius: 10, border: "1px solid #ddd", background: "#fff", fontWeight: 900 }}
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                style={{
-                  padding: "10px 14px",
-                  borderRadius: 10,
-                  border: "none",
-                  background: BRAND.red,
-                  color: "#fff",
-                  fontWeight: 900,
-                }}
+                style={{ padding: "10px 14px", borderRadius: 10, border: "none", background: BRAND.red, color: "#fff", fontWeight: 900 }}
               >
                 Continue
               </button>
@@ -601,6 +558,7 @@ function VideoAdmin({ onAdded }) {
           alignItems: "center",
           justifyContent: "space-between",
           gap: 10,
+          flexWrap: "wrap",
         }}
       >
         <strong>Admin — Add Video</strong>
@@ -619,40 +577,24 @@ function VideoAdmin({ onAdded }) {
       </div>
 
       {open && (
-        <form
-          onSubmit={submit}
-          style={{ display: "grid", gap: 10, marginTop: 10 }}
-        >
-          {err && (
-            <div style={{ color: "#b91c1c", fontWeight: 700 }}>{err}</div>
-          )}
+        <form onSubmit={submit} style={{ display: "grid", gap: 10, marginTop: 10 }}>
+          {err && <div style={{ color: "#b91c1c", fontWeight: 700 }}>{err}</div>}
           <div>
             <div style={labelS}>Label (optional)</div>
             <input
               style={input}
               value={state.label}
-              onChange={(e) =>
-                setState((s) => ({ ...s, label: e.target.value }))
-              }
+              onChange={(e) => setState((s) => ({ ...s, label: e.target.value }))}
               placeholder="e.g. HQ Fit-out Sourcing"
             />
           </div>
           <div>
             <div style={labelS}>Video URL</div>
-            <div
-              style={{
-                display: "flex",
-                gap: 8,
-                alignItems: "center",
-                flexWrap: "wrap",
-              }}
-            >
+            <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
               <input
-                style={{ ...input, flex: 1 }}
+                style={{ ...input, flex: 1, minWidth: 0 }}
                 value={state.src}
-                onChange={(e) =>
-                  setState((s) => ({ ...s, src: e.target.value }))
-                }
+                onChange={(e) => setState((s) => ({ ...s, src: e.target.value }))}
                 placeholder="https://res.cloudinary.com/.../tour.mp4"
               />
               <label
@@ -665,12 +607,7 @@ function VideoAdmin({ onAdded }) {
                   cursor: busy ? "not-allowed" : "pointer",
                 }}
               >
-                <input
-                  type="file"
-                  accept="video/*"
-                  hidden
-                  onChange={(e) => up(e.target.files)}
-                />
+                <input type="file" accept="video/*" hidden onChange={(e) => up(e.target.files)} />
                 {busy ? "Uploading…" : "Upload"}
               </label>
             </div>

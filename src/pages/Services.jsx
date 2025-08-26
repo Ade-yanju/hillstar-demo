@@ -226,6 +226,72 @@ export default function Services() {
     </div>
   );
 
+  function MenuOverlay({ onClose }) {
+    useEffect(() => {
+      const prev = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
+      return () => (document.body.style.overflow = prev);
+    }, []);
+    const items = [
+      { t: "HOME", to: "/" },
+      { t: "ABOUT", to: "/about" },
+      { t: "OUR SERVICES", to: "/services" },
+      { t: "OUR WORK", to: "/projects" },
+      { t: "CONTACT US", to: "/contact" },
+    ];
+    return (
+      <div
+        role="dialog"
+        aria-modal="true"
+        style={{
+          position: "fixed",
+          inset: 0,
+          background: "rgba(0,0,0,.94)",
+          color: "#fff",
+          zIndex: 2000,
+          overflowY: "auto",
+          padding: 24,
+        }}
+      >
+        <div style={{ position: "absolute", top: 12, right: 12 }}>
+          <button
+            onClick={onClose}
+            aria-label="Close menu"
+            style={{ background: "none", border: "none", color: "#fff" }}
+          >
+            <I.X />
+          </button>
+        </div>
+        <div
+          style={{
+            width: "min(1200px,92vw)",
+            margin: "0 auto",
+            paddingTop: 28,
+            display: "grid",
+            gap: 18,
+            textAlign: "center",
+          }}
+        >
+          {items.map((i) => (
+            <Link
+              key={i.t}
+              to={i.to}
+              onClick={onClose}
+              style={{
+                color: "#fff",
+                textDecoration: "none",
+                fontSize: "clamp(20px,4.5vw,28px)",
+                fontWeight: 800,
+              }}
+            >
+              {i.t}
+            </Link>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   const Navbar = () => {
     const [menuOpen, setMenuOpen] = useState(false);
     const isMobile = vw <= 900;
@@ -258,6 +324,7 @@ export default function Services() {
             justifyContent: "space-between",
             alignItems: "center",
             height: 70,
+            minWidth: 0,
           }}
         >
           <div
@@ -267,12 +334,15 @@ export default function Services() {
               alignItems: "center",
               gap: 8,
               cursor: "pointer",
+              minWidth: 0,
             }}
           >
             <img
               src="/assets/hillstar-logo.png"
               alt="logo"
               style={{ height: 40 }}
+              loading="lazy"
+              decoding="async"
             />
             <span style={{ color: BRAND.red, fontWeight: 900, fontSize: 20 }}>
               Hillstar
@@ -304,63 +374,7 @@ export default function Services() {
             <I.Burger />
           </button>
         </div>
-
-        {menuOpen && (
-          <div
-            role="dialog"
-            aria-modal="true"
-            style={{
-              position: "fixed",
-              inset: 0,
-              background: "rgba(0,0,0,.94)",
-              color: "#fff",
-              zIndex: 2000,
-              overflowY: "auto",
-            }}
-          >
-            <div style={{ position: "absolute", top: 12, right: 12 }}>
-              <button
-                onClick={() => setMenuOpen(false)}
-                aria-label="Close menu"
-                style={{ background: "none", border: "none", color: "#fff" }}
-              >
-                <I.X />
-              </button>
-            </div>
-            <div
-              style={{
-                width: "min(1200px,92vw)",
-                margin: "0 auto",
-                padding: "42px 0",
-                textAlign: "center",
-                display: "grid",
-                gap: 18,
-              }}
-            >
-              {[
-                { t: "HOME", to: "/" },
-                { t: "ABOUT", to: "/about" },
-                { t: "OUR SERVICES", to: "/services" },
-                { t: "OUR WORK", to: "/projects" },
-                { t: "CONTACT US", to: "/contact" },
-              ].map((i) => (
-                <Link
-                  key={i.t}
-                  to={i.to}
-                  onClick={() => setMenuOpen(false)}
-                  style={{
-                    color: "#fff",
-                    textDecoration: "none",
-                    fontSize: 24,
-                    fontWeight: 800,
-                  }}
-                >
-                  {i.t}
-                </Link>
-              ))}
-            </div>
-          </div>
-        )}
+        {menuOpen && <MenuOverlay onClose={() => setMenuOpen(false)} />}
       </div>
     );
   };
@@ -536,7 +550,7 @@ export default function Services() {
           background: `url(/assets/about_red.jpg) center/cover no-repeat`,
           color: "#fff",
           position: "relative",
-          height: 340,
+          height: "clamp(260px, 35vh, 420px)",
           display: "grid",
           placeItems: "center",
           textAlign: "center",
@@ -550,10 +564,16 @@ export default function Services() {
           }}
         />
         <div style={{ position: "relative", width: "min(900px,92vw)" }}>
-          <h1 style={{ fontSize: 40, fontWeight: 900, margin: 0 }}>
+          <h1
+            style={{
+              fontSize: "clamp(28px,4vw,40px)",
+              fontWeight: 900,
+              margin: 0,
+            }}
+          >
             Our Services
           </h1>
-          <p style={{ marginTop: 8, fontSize: 18 }}>
+          <p style={{ marginTop: 8, fontSize: "clamp(14px,2.2vw,18px)" }}>
             From property to power — we plan, build and operate mission-critical
             assets.
           </p>
@@ -600,12 +620,19 @@ export default function Services() {
               display: "grid",
               gap: 24,
               gridTemplateColumns: isWide ? "1.1fr 1fr" : "1fr",
+              alignItems: "start",
             }}
           >
             <div>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 <s.Icon size={26} style={{ color: BRAND.red }} />
-                <h2 style={{ fontSize: 28, fontWeight: 900, margin: 0 }}>
+                <h2
+                  style={{
+                    fontSize: "clamp(22px,3vw,28px)",
+                    fontWeight: 900,
+                    margin: 0,
+                  }}
+                >
                   {s.title}
                 </h2>
               </div>
@@ -627,7 +654,7 @@ export default function Services() {
               <div
                 style={{
                   display: "grid",
-                  gridTemplateColumns: "repeat(3, minmax(0,1fr))",
+                  gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))",
                   gap: 10,
                   marginTop: 10,
                 }}
@@ -730,7 +757,13 @@ export default function Services() {
       <SectionWrap
         style={{ background: BRAND.black, color: "#fff", textAlign: "center" }}
       >
-        <h2 style={{ fontSize: 26, fontWeight: 900, margin: 0 }}>
+        <h2
+          style={{
+            fontSize: "clamp(20px,3vw,26px)",
+            fontWeight: 900,
+            margin: 0,
+          }}
+        >
           Ready to talk?
         </h2>
         <p style={{ opacity: 0.9, marginTop: 8 }}>
@@ -757,31 +790,52 @@ export default function Services() {
 }
 
 /* ------------------------ SmartVideo (no reload) ------------------------ */
+/**
+ * Guarantees:
+ * - The <video> node never gets a new src after first mount (prevents reload).
+ * - CurrentTime is persisted in sessionStorage per id and restored on mount.
+ * - Pauses when scrolled off-screen, but never resets.
+ * - Fully responsive via aspect-ratio box.
+ */
 const SmartVideo = React.memo(function SmartVideoInner({ id, src }) {
   const ref = useRef(null);
+  const initialized = useRef(false);
 
   useEffect(() => {
     const v = ref.current;
     if (!v) return;
 
-    // assign once to avoid reload on re-renders
-    if (!v.src) v.src = src;
-
-    // restore last position
-    const saved = sessionStorage.getItem("vidpos:" + id);
-    if (saved) {
-      const t = parseFloat(saved);
-      if (!Number.isNaN(t)) v.currentTime = t;
+    // Assign the src exactly once to avoid reloads on re-renders.
+    if (!initialized.current) {
+      v.src = src;
+      initialized.current = true;
     }
 
+    // Restore last position when metadata is ready (duration known).
+    const restore = () => {
+      try {
+        const saved = sessionStorage.getItem("vidpos:" + id);
+        if (saved) {
+          const t = parseFloat(saved);
+          if (!Number.isNaN(t)) v.currentTime = t;
+        }
+      } catch {}
+    };
+    v.addEventListener("loadedmetadata", restore);
+
+    // Persist position periodically and on pause/visibility changes.
     const onTime = () => {
       try {
         sessionStorage.setItem("vidpos:" + id, String(v.currentTime));
       } catch {}
     };
+    const onVis = () => onTime();
     v.addEventListener("timeupdate", onTime);
+    v.addEventListener("pause", onTime);
+    document.addEventListener("visibilitychange", onVis);
+    window.addEventListener("pagehide", onTime);
 
-    // pause when out of view
+    // Auto-pause when out of view (no resets).
     const io = new IntersectionObserver(
       ([e]) => {
         if (!v) return;
@@ -792,24 +846,45 @@ const SmartVideo = React.memo(function SmartVideoInner({ id, src }) {
     io.observe(v);
 
     return () => {
+      v.removeEventListener("loadedmetadata", restore);
       v.removeEventListener("timeupdate", onTime);
+      v.removeEventListener("pause", onTime);
+      document.removeEventListener("visibilitychange", onVis);
+      window.removeEventListener("pagehide", onTime);
       io.disconnect();
     };
   }, [id, src]);
 
   return (
-    <video
-      ref={ref}
-      controls
-      preload="metadata"
+    <div
       style={{
+        position: "relative",
         width: "100%",
-        height: 300,
-        objectFit: "cover",
-        display: "block",
+        aspectRatio: "16 / 9",
+        background: "#000",
       }}
     >
-      Your browser does not support HTML5 video.
-    </video>
+      <video
+        ref={ref}
+        controls
+        playsInline
+        preload="metadata"
+        // For older iOS Safari (harmless elsewhere):
+        // @ts-ignore
+        webkit-playsinline="true"
+        style={{
+          position: "absolute",
+          inset: 0,
+          width: "100%",
+          height: "100%",
+          objectFit: "cover",
+          display: "block",
+          outline: "none",
+          border: 0,
+        }}
+      >
+        Your browser does not support HTML5 video.
+      </video>
+    </div>
   );
 });

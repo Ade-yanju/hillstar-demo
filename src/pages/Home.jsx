@@ -1,5 +1,10 @@
-// src/pages/Home.jsx
-import React, { useEffect, useMemo, useState, useCallback } from "react";
+import React, {
+  useEffect,
+  useMemo,
+  useState,
+  useCallback,
+  useRef,
+} from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 /* ----------------------------- Local theme ----------------------------- */
@@ -74,7 +79,7 @@ const Svg = {
     <svg width={size} height={size} viewBox="0 0 24 24" {...p}>
       <path
         fill="currentColor"
-        d="M11 2h2v4h-2V2Zm7.778 2.222l1.414 1.414l-2.828 2.828l-1.414-1.414l2.828-2.828ZM2.808 3.636l1.414-1.414l2.828 2.828L5.636 6.464L2.808 3.636ZM12 8a2 2 0 1 1 0 4 2 2 0 0 1 0-4Zm-2 6h4l3 8h-2l-1-3h-2l-1 3H7l3-8Zm2.5 3-.5-1.333L11.5 17h1Z"
+        d="M11 2h2v4h-2V2Zm7.778 2.222l1.414 1.414l-2.828 2.828l-1.414-1.414l2.828-2.828ZM2.808 3.636l1.414-1.414l2.828 2.828L5.636 6.464L2.808 3.636ZM12 8a2 2 0 1 1 0 4a2 2 0 0 1 0-4Zm-2 6h4l3 8h-2l-1-3h-2l-1 3H7l3-8Zm2.5 3-.5-1.333L11.5 17h1Z"
       />
     </svg>
   ),
@@ -761,18 +766,12 @@ export default function Home() {
 
           {/* Player (responsive 16:9) */}
           <div
-            style={{
-              position: "relative",
-              width: "100%",
-              background: "#000",
-            }}
+            style={{ position: "relative", width: "100%", background: "#000" }}
           >
-            {/* Fallback height for older browsers */}
             <div style={{ paddingTop: "56.25%" }} />
-            <video
-              key={vids[idx]?.src}
-              controls
-              playsInline
+            <StableVideo
+              id={"home-modal"}
+              src={vids[idx]?.src}
               style={{
                 position: "absolute",
                 inset: 0,
@@ -782,8 +781,8 @@ export default function Home() {
                 background: "#000",
                 display: "block",
               }}
-              src={vids[idx]?.src}
             />
+
             {/* Prev / Next */}
             <button
               onClick={prev}
@@ -944,5 +943,72 @@ export default function Home() {
         setIdx={setVidIdx}
       />
     </>
+  );
+}
+
+/* ------------------------ StableVideo (no auto reload) ------------------------
+   - The <video> element is reused; we don't force a remount with a key.
+   - We only change .src when it actually changes.
+   - CurrentTime is persisted per-source and restored, so closing/reopening
+     (or switching away and back) resumes seamlessly.
+   - Mobile friendly: playsInline + webkit-playsinline. */
+function StableVideo({ id, src, style }) {
+  const ref = useRef(null);
+  const lastSrcRef = useRef("");
+
+  useEffect(() => {
+    const v = ref.current;
+    if (!v) return;
+
+    const saveKey = `${id || "vid"}:${src}`;
+    const save = () => {
+      try {
+        sessionStorage.setItem(saveKey, String(v.currentTime || 0));
+      } catch {}
+    };
+    const restore = () => {
+      try {
+        const s = sessionStorage.getItem(saveKey);
+        const t = s ? parseFloat(s) : NaN;
+        if (!Number.isNaN(t)) v.currentTime = t;
+      } catch {}
+    };
+
+    // Update src only if it changed to avoid reloads during re-renders
+    if (src && lastSrcRef.current !== src) {
+      // Save previous video's time before switching
+      if (lastSrcRef.current) {
+        try {
+          const prevKey = `${id || "vid"}:${lastSrcRef.current}`;
+          sessionStorage.setItem(prevKey, String(v.currentTime || 0));
+        } catch {}
+      }
+      v.src = src;
+      lastSrcRef.current = src;
+    }
+
+    v.addEventListener("loadedmetadata", restore);
+    v.addEventListener("timeupdate", save);
+    v.addEventListener("pause", save);
+    window.addEventListener("pagehide", save);
+
+    return () => {
+      v.removeEventListener("loadedmetadata", restore);
+      v.removeEventListener("timeupdate", save);
+      v.removeEventListener("pause", save);
+      window.removeEventListener("pagehide", save);
+    };
+  }, [id, src]);
+
+  return (
+    <video
+      ref={ref}
+      controls
+      playsInline
+      // @ts-ignore for old iOS
+      webkit-playsinline="true"
+      preload="metadata"
+      style={style}
+    />
   );
 }

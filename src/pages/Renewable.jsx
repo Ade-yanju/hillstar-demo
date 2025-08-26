@@ -9,7 +9,6 @@ import {
   useScrollY,
   HeroStrip,
   Section,
-  VideoPlayer,
   getEnv,
 } from "../shared/Shared";
 
@@ -84,7 +83,6 @@ export default function Renewable() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [params, setParams] = useSearchParams();
 
-  // Should we prompt for the PIN now?
   const hasAdminPrompt =
     params.has("admin1") ||
     (params.get("admin") === "1" && !localStorage.getItem(LS_ADMIN_ON_KEY));
@@ -179,12 +177,7 @@ export default function Renewable() {
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <span>Connect with us</span>
           {SOCIALS.slice(0, 3).map(({ name, href, Icon: IC }) => (
-            <a
-              key={name}
-              href={href}
-              aria-label={name}
-              style={{ color: "#fff" }}
-            >
+            <a key={name} href={href} aria-label={name} style={{ color: "#fff" }}>
               <IC size={18} />
             </a>
           ))}
@@ -192,6 +185,72 @@ export default function Renewable() {
       </div>
     </div>
   );
+
+  function MenuOverlay({ onClose }) {
+    useEffect(() => {
+      const prev = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
+      return () => (document.body.style.overflow = prev);
+    }, []);
+    const items = [
+      { t: "HOME", to: "/" },
+      { t: "ABOUT", to: "/about" },
+      { t: "OUR SERVICES", to: "/services" },
+      { t: "OUR WORK", to: "/projects" },
+      { t: "CONTACT US", to: "/contact" },
+    ];
+    return (
+      <div
+        role="dialog"
+        aria-modal="true"
+        style={{
+          position: "fixed",
+          inset: 0,
+          background: "rgba(0,0,0,.92)",
+          color: "#fff",
+          zIndex: 2000,
+          overflowY: "auto",
+          padding: 24,
+        }}
+      >
+        <div style={{ position: "absolute", top: 12, right: 12 }}>
+          <button
+            onClick={onClose}
+            aria-label="Close menu"
+            style={{ background: "none", border: "none", color: "#fff" }}
+          >
+            <Icon.X />
+          </button>
+        </div>
+        <div
+          style={{
+            width: "min(1200px,92vw)",
+            margin: "0 auto",
+            paddingTop: 28,
+            display: "grid",
+            gap: 18,
+            textAlign: "center",
+          }}
+        >
+          {items.map((i) => (
+            <Link
+              key={i.t}
+              to={i.to}
+              onClick={onClose}
+              style={{
+                color: "#fff",
+                textDecoration: "none",
+                fontSize: "clamp(20px,4.5vw,28px)",
+                fontWeight: 800,
+              }}
+            >
+              {i.t}
+            </Link>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   const Navbar = () => {
     const isMobile = vw <= 900;
@@ -224,6 +283,7 @@ export default function Renewable() {
             justifyContent: "space-between",
             alignItems: "center",
             height: 70,
+            minWidth: 0,
           }}
         >
           <div
@@ -233,12 +293,15 @@ export default function Renewable() {
               alignItems: "center",
               gap: 8,
               cursor: "pointer",
+              minWidth: 0,
             }}
           >
             <img
               src="/assets/hillstar-logo.png"
               alt="logo"
               style={{ height: 40 }}
+              loading="lazy"
+              decoding="async"
             />
             <span style={{ color: BRAND.red, fontWeight: 900, fontSize: 20 }}>
               Hillstar
@@ -270,54 +333,7 @@ export default function Renewable() {
             <Icon.Burger />
           </button>
         </div>
-        {menuOpen && (
-          <div
-            role="dialog"
-            aria-modal="true"
-            style={{
-              position: "fixed",
-              inset: 0,
-              background: "rgba(0,0,0,.9)",
-              zIndex: 2000,
-              color: "#fff",
-              display: "grid",
-              placeItems: "center",
-            }}
-          >
-            <div style={{ position: "absolute", top: 12, right: 12 }}>
-              <button
-                onClick={() => setMenuOpen(false)}
-                aria-label="Close menu"
-                style={{ background: "none", border: "none", color: "#fff" }}
-              >
-                <Icon.X />
-              </button>
-            </div>
-            <div style={{ textAlign: "center", display: "grid", gap: 20 }}>
-              {[
-                { t: "HOME", to: "/" },
-                { t: "ABOUT", to: "/about" },
-                { t: "OUR SERVICES", to: "/services" },
-                { t: "OUR WORK", to: "/projects" },
-                { t: "CONTACT US", to: "/contact" },
-              ].map((l) => (
-                <Link
-                  key={l.t}
-                  to={l.to}
-                  onClick={() => setMenuOpen(false)}
-                  style={{
-                    fontSize: 24,
-                    fontWeight: 700,
-                    color: "#fff",
-                    textDecoration: "none",
-                  }}
-                >
-                  {l.t}
-                </Link>
-              ))}
-            </div>
-          </div>
-        )}
+        {menuOpen && <MenuOverlay onClose={() => setMenuOpen(false)} />}
       </div>
     );
   };
@@ -370,6 +386,7 @@ export default function Renewable() {
             display: "flex",
             gap: 8,
             justifyContent: "flex-end",
+            flexWrap: "wrap",
           }}
         >
           <span
@@ -434,7 +451,7 @@ export default function Renewable() {
           </div>
         )}
 
-        <ul style={{ lineHeight: 1.9 }}>
+        <ul style={{ lineHeight: 1.9, marginTop: 0 }}>
           {[
             "Solar PV design & EPC",
             "Battery storage & hybrid systems",
@@ -450,17 +467,26 @@ export default function Renewable() {
           <div
             style={{
               display: "grid",
-              gap: 12,
-              gridTemplateColumns: vw > 900 ? "repeat(3,1fr)" : "1fr",
+              gap: 16,
+              gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
               marginTop: 16,
+              alignItems: "start",
             }}
           >
             {videos.map((v, i) => (
-              <VideoPlayer
-                key={`${v.src}-${i}`}
-                src={v.src}
-                label={v.label || `Tour #${i + 1}`}
-              />
+              <div key={`${v.src}-${i}`} style={{ display: "grid", gap: 8 }}>
+                {v.label && (
+                  <div
+                    style={{
+                      fontWeight: 800,
+                      fontSize: "clamp(14px, 1.8vw, 16px)",
+                    }}
+                  >
+                    {v.label}
+                  </div>
+                )}
+                <ResponsiveVideo src={v.src} />
+              </div>
             ))}
           </div>
         )}
@@ -478,6 +504,7 @@ export default function Renewable() {
             display: "grid",
             placeItems: "center",
             zIndex: 4000,
+            padding: 12,
           }}
         >
           <form
@@ -515,7 +542,12 @@ export default function Renewable() {
               <div style={{ color: "#b91c1c", fontWeight: 700 }}>{pinErr}</div>
             )}
             <div
-              style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}
+              style={{
+                display: "flex",
+                gap: 8,
+                justifyContent: "flex-end",
+                flexWrap: "wrap",
+              }}
             >
               <button
                 type="button"
@@ -548,6 +580,40 @@ export default function Renewable() {
         </div>
       )}
     </>
+  );
+}
+
+/* ------------------------- Mobile-friendly <video/> ------------------------- */
+function ResponsiveVideo({ src }) {
+  return (
+    <div
+      style={{
+        width: "100%",
+        aspectRatio: "16 / 9",
+        background: "#000",
+        borderRadius: 10,
+        overflow: "hidden",
+        border: "1px solid #e5e7eb",
+      }}
+    >
+      <video
+        src={src}
+        controls
+        playsInline
+        preload="metadata"
+        // For older iOS Safari (harmless elsewhere):
+        // @ts-ignore
+        webkit-playsinline="true"
+        style={{
+          display: "block",
+          width: "100%",
+          height: "100%",
+          objectFit: "cover",
+          outline: "none",
+          border: 0,
+        }}
+      />
+    </div>
   );
 }
 
@@ -604,6 +670,7 @@ function VideoAdmin({ onAdded }) {
           alignItems: "center",
           justifyContent: "space-between",
           gap: 10,
+          flexWrap: "wrap",
         }}
       >
         <strong>Admin — Add Video</strong>
@@ -651,7 +718,7 @@ function VideoAdmin({ onAdded }) {
               }}
             >
               <input
-                style={{ ...input, flex: 1 }}
+                style={{ ...input, flex: 1, minWidth: 0 }}
                 value={state.src}
                 onChange={(e) =>
                   setState((s) => ({ ...s, src: e.target.value }))

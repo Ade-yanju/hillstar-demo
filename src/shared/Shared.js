@@ -1,5 +1,5 @@
 // src/shared/Shared.js
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 /* ------------------------------------------------------------------ */
@@ -259,10 +259,25 @@ export function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
   const isMobile = vw <= 900;
 
+  // Prevent body scroll when mobile menu is open (improves mobile UX)
+  useEffect(() => {
+    if (!menuOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [menuOpen]);
+
   const MenuLink = ({ to, children }) => (
     <Link
       to={to}
-      style={{ color: "#fff", textDecoration: "none", fontWeight: 600 }}
+      style={{
+        color: "#fff",
+        textDecoration: "none",
+        fontWeight: 600,
+        fontSize: "clamp(12px, 1.4vw, 14px)",
+      }}
     >
       {children}
     </Link>
@@ -275,7 +290,7 @@ export function Header() {
         style={{
           background: BRAND.darkGray,
           color: "#fff",
-          fontSize: 13,
+          fontSize: "clamp(12px, 1.6vw, 13px)",
           padding: "6px 0",
         }}
       >
@@ -365,7 +380,13 @@ export function Header() {
               alt="logo"
               style={{ height: 40 }}
             />
-            <span style={{ color: BRAND.red, fontWeight: 900, fontSize: 20 }}>
+            <span
+              style={{
+                color: BRAND.red,
+                fontWeight: 900,
+                fontSize: "clamp(18px, 2vw, 20px)",
+              }}
+            >
               Hillstar
             </span>
           </div>
@@ -444,7 +465,7 @@ export function Header() {
                   style={{
                     color: "#fff",
                     textDecoration: "none",
-                    fontSize: 24,
+                    fontSize: "clamp(20px, 3.2vw, 24px)",
                     fontWeight: 800,
                   }}
                 >
@@ -494,10 +515,15 @@ export function Footer({ year = new Date().getFullYear() }) {
               alt="Hillstar Logo"
               style={{ height: 24 }}
             />
-            <p style={{ marginTop: 12, maxWidth: 360 }}>
-              With deep market <b>Knowledge</b>, <b>Integrity</b> and{" "}
-              <b>Passion</b> for Service, we turn property goals to lasting
-              realities.
+            <p
+              style={{
+                marginTop: 12,
+                maxWidth: 360,
+                fontSize: "clamp(14px,1.6vw,15px)",
+              }}
+            >
+              With deep <b>Knowledge</b>, <b>Integrity</b> and <b>Passion</b>{" "}
+              for Service, we turn property goals to lasting realities.
             </p>
             <div style={{ display: "flex", gap: 10, marginTop: 10 }}>
               {[Icon.Instagram, Icon.Twitter, Icon.LinkedIn, Icon.WhatsApp].map(
@@ -577,7 +603,12 @@ export function Footer({ year = new Date().getFullYear() }) {
               Have a Question?
             </div>
             <div
-              style={{ display: "grid", gap: 4, fontSize: 14, lineHeight: 1.5 }}
+              style={{
+                display: "grid",
+                gap: 4,
+                fontSize: "clamp(13px,1.6vw,14px)",
+                lineHeight: 1.5,
+              }}
             >
               <div>25 Kayode Otitoju, OFF Admiralty Way,</div>
               <div>Lekki, Lagos, Nigeria</div>
@@ -590,7 +621,7 @@ export function Footer({ year = new Date().getFullYear() }) {
         <div
           style={{
             textAlign: "center",
-            fontSize: 13,
+            fontSize: "clamp(12px, 1.4vw, 13px)",
             opacity: 0.85,
             marginTop: 8,
           }}
@@ -647,6 +678,7 @@ export function Fab({
             padding: 10,
             boxShadow: "0 10px 24px rgba(0,0,0,.35)",
             width: 220,
+            maxWidth: "92vw",
           }}
         >
           <a href={instagram} target="_blank" rel="noreferrer" style={item}>
@@ -704,6 +736,7 @@ export function Fab({
           fontWeight: 900,
           boxShadow: "0 10px 24px rgba(0,0,0,.35)",
           cursor: "pointer",
+          fontSize: "clamp(13px,1.8vw,14px)",
         }}
       >
         <Icon.Phone size={18} />
@@ -787,12 +820,87 @@ export function Section({ title, subtitle, children, extraRight }) {
   );
 }
 
-/* ------------------------------- Responsive Video ------------------------------- */
-export function VideoPlayer({ src, label, ratio = 16 / 9, poster }) {
+/* ------------------------------- Stable, Responsive Video -------------------------------
+   - Reuses the same <video> element (no remount flicker)
+   - Only assigns .src when it *actually* changes
+   - Persists playhead per source in sessionStorage
+   - Pauses when scrolled out of view (saves power) */
+export function VideoPlayer({ src, label, ratio = 16 / 9, poster, persistId }) {
   const [playing, setPlaying] = useState(false);
+  const ref = useRef(null);
+  const lastSrcRef = useRef("");
 
-  // padding-top fallback (for browsers without CSS aspect-ratio)
   const padPct = `${Math.round((100 / ratio) * 1000) / 1000}%`;
+  const keyFor = (s) => `vidpos:${persistId || s || "video"}`;
+
+  useEffect(() => {
+    const v = ref.current;
+    if (!v) return;
+
+    const assignSrcIfNeeded = () => {
+      if (src && lastSrcRef.current !== src) {
+        // Save previous video's position before switching
+        if (lastSrcRef.current) {
+          try {
+            sessionStorage.setItem(
+              keyFor(lastSrcRef.current),
+              String(v.currentTime || 0)
+            );
+          } catch {}
+        }
+        v.src = src;
+        lastSrcRef.current = src;
+      }
+    };
+
+    const restore = () => {
+      try {
+        const s = sessionStorage.getItem(keyFor(lastSrcRef.current));
+        const t = s ? parseFloat(s) : NaN;
+        if (!Number.isNaN(t)) v.currentTime = t;
+      } catch {}
+    };
+    const save = () => {
+      try {
+        sessionStorage.setItem(
+          keyFor(lastSrcRef.current),
+          String(v.currentTime || 0)
+        );
+      } catch {}
+    };
+
+    assignSrcIfNeeded();
+
+    v.addEventListener("loadedmetadata", restore);
+    v.addEventListener("timeupdate", save);
+    v.addEventListener("pause", save);
+    const onVis = () => document.hidden && save();
+    const onHide = () => save();
+    document.addEventListener("visibilitychange", onVis);
+    window.addEventListener("pagehide", onHide);
+
+    // Pause when out of view
+    let io;
+    if (typeof IntersectionObserver !== "undefined") {
+      io = new IntersectionObserver(
+        ([e]) => {
+          if (!v) return;
+          if (!e.isIntersecting && !v.paused) v.pause();
+        },
+        { threshold: 0.01 }
+      );
+      io.observe(v);
+    }
+
+    return () => {
+      v.removeEventListener("loadedmetadata", restore);
+      v.removeEventListener("timeupdate", save);
+      v.removeEventListener("pause", save);
+      document.removeEventListener("visibilitychange", onVis);
+      window.removeEventListener("pagehide", onHide);
+      if (io) io.disconnect();
+    };
+  }, [src, persistId]);
 
   return (
     <div
@@ -808,6 +916,7 @@ export function VideoPlayer({ src, label, ratio = 16 / 9, poster }) {
           padding: "10px 12px",
           fontWeight: 800,
           borderBottom: "1px solid #eee",
+          fontSize: "clamp(14px,1.8vw,15px)",
         }}
       >
         {label || "Video"}
@@ -819,14 +928,18 @@ export function VideoPlayer({ src, label, ratio = 16 / 9, poster }) {
           position: "relative",
           width: "100%",
           aspectRatio: `${ratio}`,
-          paddingTop: padPct, // fallback
+          paddingTop: padPct,
           background: "#000",
         }}
       >
         <video
-          src={src}
+          ref={ref}
+          // src intentionally NOT set here; we assign it imperatively to avoid reloads
           controls
           playsInline
+          // @ts-ignore for older iOS Safari
+          webkit-playsinline="true"
+          preload="metadata"
           poster={poster}
           onPlay={() => setPlaying(true)}
           onPause={() => setPlaying(false)}
@@ -837,7 +950,9 @@ export function VideoPlayer({ src, label, ratio = 16 / 9, poster }) {
             height: "100%",
             display: "block",
             objectFit: "cover",
+            background: "#000",
           }}
+          aria-label={label || "Video"}
         />
 
         {!playing && (
